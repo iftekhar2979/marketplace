@@ -1,3 +1,4 @@
+import { Otp } from 'src/otp/entities/otp.entity';
 import {
   Controller,
   Get,
@@ -11,6 +12,8 @@ import {
   Req,
   InternalServerErrorException,
   ClassSerializerInterceptor,
+  Session,
+  NotFoundException,
   // ClassSerializerInterceptor,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
@@ -44,6 +47,7 @@ import { UserResponseDto } from "./dto-response/user-response.dto";
 import { MessageResponseDto } from "./dto-response/message-response.dto";
 import { LogoutResponseDto } from "./dto-response/logout-response.dto";
 import { GoogleAuthGuard } from "./guards/google-auth.guard";
+import { OtpVerificationDto } from './dto/otp-verification.dto';
 
 /**
  * AuthController is responsible for handling incoming requests specific to Authentication related APIs and returning responses to the client.
@@ -53,14 +57,6 @@ import { GoogleAuthGuard } from "./guards/google-auth.guard";
 @ApiTags("Auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  /**
-   * POST API - "/signup" - used for signing up the user and send mail with activation token to the given email for account activation.
-   * it requires authentication.
-   * @param createUserDto request body data containing user information for new user.
-   * @param req HTTP request object.
-   * @returns newly created user object, token for authentication and response status.
-   * @throws ConflictException in case of email already exists in the database.
-   */
   @Post("signup")
   @ApiOperation({
     description: "Api to register new users.",
@@ -130,6 +126,52 @@ export class AuthController {
     return { status: "success", data:user, token };
   }
 
+
+  @Post("resend-otp")
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TransformInterceptor)
+  @ApiOperation({
+    description: "Api to Resend otp.",
+    summary: "Api to Resend the otp.",
+  })
+  @ApiUnauthorizedResponse({ description: "Session Expired!" })
+  async resendOtp(@Req() req: Request) {
+    const user = req.user as User;
+if(!user) {   
+  throw new NotFoundException("User not found");
+}
+    return  await this.authService.resendOtp({user});
+  }
+  @Post("forgot-password")
+  // @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TransformInterceptor)
+  @ApiOperation({
+    description: "Forget Password",
+    summary: "Forget password and send otp",
+  })
+  @ApiUnauthorizedResponse({ description: "Session Expired!" })
+  async forgotPassword(@Req() req: Request,@Body() forgotPasswordDto: ForgotPasswordDto) {
+    // // console.log(req)
+    //  const token = await this.authService
+  return  await this.authService.forgetPassword(req, forgotPasswordDto.email);
+    // return token
+  }
+
+    @Post("verify-otp")
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TransformInterceptor)
+  @ApiOperation({
+    description: "Otp Verification",
+    summary: "Verify the otp .",
+  })
+  @ApiUnauthorizedResponse({ description: "Session Expired!" })
+  async VerifyOtp(@Req() req: Request,@Body() otp:OtpVerificationDto) {
+    const user = req.user;
+    console.log(otp)
+    // console.log(req)
+     const token = await this.authService.OtpVerify(otp);
+    return token
+  }
   /**
    * Get API - "/google" - used for login through google account. It redirects to Google OAuth Content Screen.
    * @param req HTTP request object.
@@ -150,9 +192,7 @@ export class AuthController {
   /**
    * You need to deploy the backend and frontend first, if locally, then use ngrok
    *
-   * Refer this Repository for Frontend Integration
-   * {@link https://github.com/debiprasadmishra50/react-oauth2-google.git}
-   *
+ 
    * Get API - "/apple/callback" - used for login through apple account. It is a webhook hit by Frontend with user information and jwt token sent from Apple to frontend
    * @param req HTTP request object containing user information from apple.
    * @returns created or logged in user object, token for authentication and response status.

@@ -25,17 +25,10 @@ export class UserService {
   }
 
   async getUserById(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
-
+    const user = await this.userRepository.findOne({ where: { id } ,select: ["id", "firstName", "lastName", "email", "roles"] });
     return user;
   }
 
-  /**
-   * it updates the user information as per provided information.
-   * @param updateUserDto user information that needs to be updated.
-   * @param user user information of current logged in user.
-   * @returns updated user information
-   */
   async updateUserData(updateUserDto: UpdateUserDto, user: User) {
     let isUpdated: boolean = false;
 

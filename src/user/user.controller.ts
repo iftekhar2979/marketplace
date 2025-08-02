@@ -27,6 +27,7 @@ import { ApiResponseDto, CountApiResponseDto } from "../shared/dto/base-response
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  
   @Get("all")
   @ApiOperation({
     description: "Api to fetch details of all users.",

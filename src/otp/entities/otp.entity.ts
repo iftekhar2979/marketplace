@@ -1,8 +1,21 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsDate, IsInt, IsString } from "class-validator";
+import { number } from "joi";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
+export enum OtpType {
+  LOGIN = 'login',
+  REGISTRATION = 'registration',
+  FORGOT_PASSWORD = 'forgot_password',
+  VERIFY_EMAIL = 'verify_email',
+  VERIFY_PHONE = 'verify_phone',
+  TWO_FACTOR_AUTH = 'two_factor_auth',
+  RESET_PASSWORD = 'reset_password',
+  CHANGE_EMAIL = 'change_email',
+  CHANGE_PHONE = 'change_phone',
+  CUSTOM = 'custom'
+}
 @Entity({name:"otps"})
 export class Otp {
     @PrimaryGeneratedColumn('increment')
@@ -16,8 +29,15 @@ export class Otp {
 
     @Column({ type: 'string' })
     @ApiProperty()
-    @IsString()  // Validate that userId is an integer
+    @IsString() 
     user_id: string;
+
+   @Column('enum', { enum: OtpType, default: OtpType.REGISTRATION })
+  @ApiProperty({ enum: OtpType, default: OtpType.REGISTRATION })
+  type: OtpType;
+   @Column({type: 'int', default: 0})
+  @ApiProperty({ type: Number, default:0 })
+  attempts: number;
 
     @ManyToOne(() => User) // Assuming User entity exists
     @JoinColumn({ name: 'user_id' })
@@ -28,4 +48,11 @@ export class Otp {
     @ApiProperty()
     @IsDate()  // Ensure expiresAt is a valid date
     expiresAt: Date;
+@CreateDateColumn()
+@ApiProperty()
+createdAt: Date;
+
+@UpdateDateColumn()
+@ApiProperty()
+updatedAt: Date;
 }

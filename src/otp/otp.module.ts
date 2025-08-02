@@ -7,6 +7,7 @@ import { Otp } from './entities/otp.entity';
   imports:[
     TypeOrmModule.forFeature([Otp]) // Assuming Otp is the entity for OTPs
   ],
-  providers: [OtpService]
+  providers: [OtpService],
+  exports: [OtpService] // Exporting OtpService so it can be used in other modules
 })
 export class OtpModule {}
