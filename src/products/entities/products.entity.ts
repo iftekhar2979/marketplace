@@ -5,6 +5,8 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import {
   IsString,
@@ -21,6 +23,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductImage } from './productImage.entity';
 import { ProductStatus } from '../enums/status.enum';
+import { User } from 'src/user/entities/user.entity';
 
 @Entity('products')
 export class Product {
@@ -123,4 +126,8 @@ export class Product {
   @ApiProperty({ example: '2025-08-08T15:00:00Z', description: 'Last update timestamp' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
+
+  @ManyToOne(() => User, (user) => user.products, { eager: true })
+@JoinColumn({ name: 'user_id' })
+user: User; 
 }

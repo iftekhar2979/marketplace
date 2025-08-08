@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { UserRoles } from "../enums/role.enum";
+import { Product } from "src/products/entities/products.entity";
 
 /**
  * It describes the schema for user table in database.
@@ -91,4 +92,8 @@ export class User {
   @DeleteDateColumn()
   @ApiProperty()
   deletedAt: Date;
+
+  @OneToMany(() => Product, (product) => product.user_id)
+  products: Product[];
+
 }

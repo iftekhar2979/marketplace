@@ -21,6 +21,10 @@ import { JwtModule } from "@nestjs/jwt";
 import { ProductsModule } from './products/products.module';
 import { ElasticsearchModule } from "@nestjs/elasticsearch";
 import { SearchModule } from './search/search.module';
+import { FavouritesModule } from './favourites/favourites.module';
+import { OffersModule } from './offers/offers.module';
+import { OrdersModule } from './orders/orders.module';
+import { DeliveryModule } from './delivery/delivery.module';
 
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
@@ -72,6 +76,10 @@ import { SearchModule } from './search/search.module';
     OtpModule,
     ProductsModule,
     SearchModule,
+    FavouritesModule,
+    OffersModule,
+    OrdersModule,
+    DeliveryModule,
   
   ],
   controllers: [AppController],

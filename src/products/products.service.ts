@@ -7,6 +7,8 @@ import { CreateProductDto } from './dto/CreateProductDto.dto';
 import { ProductStatus } from './enums/status.enum';
 import { GetProductsQueryDto } from './dto/GetProductDto.dto';
 import { pagination } from 'src/shared/utils/pagination';
+import { UpdateProductDto } from './dto/updatingProduct.dto';
+import { ResponseInterface } from 'src/common/types/responseInterface';
 // import { Product } from './entities/product.entity';
 // import { CreateProductDto } from './dto/create-product.dto';
 // import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,6 +24,25 @@ export class ProductsService {
     private readonly productImageRepository: Repository<ProductImage>,
   ) {}
 
+  async updateProductStatus(
+    {id,user_id, status}:{id:number;user_id?:string;status:ProductStatus}
+  ): Promise<Product> {
+    const query =user_id ? {id,user_id} :{ id };
+    const product = await this.productRepository.findOne({ where: { ...query} });   
+    if (!product) {
+      throw new NotFoundException(`Product with id ${id} not found.`);
+    }
+    if(product.status === ProductStatus.SOLD) {
+      throw new BadRequestException('Product is already sold');
+    }
+    if(product.status === ProductStatus.DELETED) {
+      throw new BadRequestException('Product is already Deleted');
+    }
+    return this.productRepository.save({
+      ...product,
+      status,
+    });
+  }
   async create(createProductDto: CreateProductDto, userId: number) {
     // Parse and validate numeric and boolean fields
     const sellingPrice = parseFloat(createProductDto.selling_price);
@@ -46,7 +67,7 @@ export class ProductsService {
     product.size = createProductDto.size;
     product.brand = createProductDto.brand;
     product.is_negotiable = isNegotiable;
-    product.status = ProductStatus.AVAILABLE; // or whatever default
+    product.status = ProductStatus.PENDING; // or whatever default
 
    const productInfo =await this.productRepository.save(product);
     // Handle images if any
@@ -129,7 +150,7 @@ export class ProductsService {
       const [min, max] = price.split('-').map(Number);
       where.selling_price = Between(min || 0, max || Number.MAX_SAFE_INTEGER);
     }
-
+where.status = ProductStatus.AVAILABLE;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
@@ -148,4 +169,56 @@ export class ProductsService {
     };
   }
 
+   async updateProduct(id: number, updateDto: UpdateProductDto , user_id:string): Promise<{message:string,statusCode:number,data:Product}> {
+    const product = await this.productRepository.findOne({ where: { id,user_id ,status:ProductStatus.AVAILABLE } });
+
+    if (!product) {
+      throw new NotFoundException(`Product with id ${id} not found.`);
+    }
+
+    try {
+      console.log(updateDto.images.length > 0)
+    
+           Object.assign(product, {
+        ...updateDto,
+        selling_price: Number(updateDto.selling_price),
+        purchasing_price: Number(updateDto.phurcasing_price),
+        quantity: Number(updateDto.quantity),
+        is_negotiable: updateDto.is_negotiable === 'true',
+        images: updateDto.images.length > 0 ? updateDto.images : product.images
+      });
+      // Optional: Replace images if new images are provided
+      if(updateDto.images && Array.isArray(updateDto.images) && updateDto.images.length > 0) {
+ await this.productImageRepository.delete({ product_id: id });
+
+        // Add new images
+       product.images = updateDto.images.map((imgUrl: string) => {
+        const img = new ProductImage();
+        img.image = imgUrl; // assuming images are URLs; if files, handle accordingly
+        img.product_id = product.id; // link image to product
+        return img;
+      });
+        await this.productImageRepository.insert(product.images);
+      }
+await this.productRepository.save(product);
+      return {message:"Product updated successfully", statusCode:200, data: product};
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw new BadRequestException('Failed to update product.');
+    }
+  }
+
+   async getProductById(id: number): Promise<ResponseInterface<Product>> {
+    console.log(id)
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: [ 'user'], 
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with id ${id} not found`);
+    }
+
+    return {message:"Product Retrived Successfully",data:product,statusCode:200,status:"success"};
+  }
 }
