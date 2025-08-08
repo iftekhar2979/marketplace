@@ -49,6 +49,7 @@ export class S3Service {
     const fileNameArr = fileName.split(".");
     const originalFileName = fileNameArr[0].replace(/[^a-zA-Z0-9]/g, "_");
     const contentType = mime.lookup(fileName) || 'application/octet-stream'; // Use mime-types to determine the MIME type
+    
     const imageName = `${primaryPath}/${date}/${originalFileName}-${Date.now()}.${fileNameArr[fileNameArr.length - 1]}`;
 
     // Log the content type for debugging
@@ -58,6 +59,7 @@ export class S3Service {
       Bucket: this.configService.get<string>("AWS_PUBLIC_BUCKET_NAME"),  // MinIO bucket name
       Key: imageName,
       ContentType: contentType,  // Use the proper MIME type
+      ContentDisposition: 'inline' 
     };
 
     // Generate the pre-signed URL for the file upload

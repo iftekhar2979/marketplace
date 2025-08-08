@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Session, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import {
   ApiTags,
   ApiBearerAuth,
@@ -7,13 +7,16 @@ import {
   ApiForbiddenResponse,
   ApiOperation,
 } from "@nestjs/swagger";
-import { GetUser } from "../auth/decorators/get-user.decorator";
+import { GetFileDestination, GetUser } from "../auth/decorators/get-user.decorator";
 import { User } from "./entities/user.entity";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { UpdateUserDto } from "./dto/update-user.dto";
+import { UpdateProfilePictureDto, UpdateUserDto } from "./dto/update-user.dto";
 import { AccountActivatedGuard } from "./guards/account-activation.guard";
 import { UserService } from "./user.service";
 import { ApiResponseDto, CountApiResponseDto } from "../shared/dto/base-response.dto";
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import { multerConfig, multerS3Config } from "src/common/multer/multer.config";
+import { JwtAuthenticationGuard } from "src/auth/guards/session-auth.guard";
 
 /**
  * UserController is responsible for handling incoming requests specific to User and returning responses to the client.
@@ -26,8 +29,6 @@ import { ApiResponseDto, CountApiResponseDto } from "../shared/dto/base-response
 @ApiUnauthorizedResponse({ description: "In case user is not logged in" })
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  
   @Get("all")
   @ApiOperation({
     description: "Api to fetch details of all users.",
@@ -77,7 +78,22 @@ export class UserController {
 
     return { status: "success", data: updatedUser };
   }
+  @Patch("upload-image")
+  @UseGuards(JwtAuthenticationGuard)
+    @UseInterceptors(FileInterceptor('image',multerConfig))
+  @ApiOperation({
+    description: "Api to update user Profile Picture",
+    summary: "Api to update user Profile Picture.",
+  })
+  @ApiOkResponse({ description: "Update User Data", type: ApiResponseDto<User> })
+  @ApiForbiddenResponse({ description: "If the account is not activated" })
+  async updateProfilePicture(@GetUser() user: User , @GetFileDestination() fileDestination: string) {
+   console.log(fileDestination)
+    await this.userService.updateImage({ imageUrl: fileDestination, user });
 
+    return { status: "success", data: null, message:"Image updated successfully",statusCode: 200 };
+  }
+ 
   /**
    * Get API - "/:id" - Get data about an user
    * @param id user profile information about an user

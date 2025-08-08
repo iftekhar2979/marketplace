@@ -48,6 +48,8 @@ import { MessageResponseDto } from "./dto-response/message-response.dto";
 import { LogoutResponseDto } from "./dto-response/logout-response.dto";
 import { GoogleAuthGuard } from "./guards/google-auth.guard";
 import { OtpVerificationDto } from './dto/otp-verification.dto';
+import { JwtAuthenticationGuard } from './guards/session-auth.guard';
+import { ForgetPasswordGuard } from './guards/forget-password.guard';
 
 /**
  * AuthController is responsible for handling incoming requests specific to Authentication related APIs and returning responses to the client.
@@ -128,7 +130,7 @@ export class AuthController {
 
 
   @Post("resend-otp")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthenticationGuard)
   @UseInterceptors(TransformInterceptor)
   @ApiOperation({
     description: "Api to Resend otp.",
@@ -157,8 +159,8 @@ if(!user) {
     // return token
   }
 
-    @Post("verify-otp")
-  @UseGuards(JwtAuthGuard)
+  @Post("verify-otp")
+  @UseGuards(JwtAuthenticationGuard)
   @UseInterceptors(TransformInterceptor)
   @ApiOperation({
     description: "Otp Verification",
@@ -166,16 +168,24 @@ if(!user) {
   })
   @ApiUnauthorizedResponse({ description: "Session Expired!" })
   async VerifyOtp(@Req() req: Request,@Body() otp:OtpVerificationDto) {
-    const user = req.user;
-    console.log(otp)
-    // console.log(req)
+
      const token = await this.authService.OtpVerify(otp);
     return token
   }
-  /**
-   * Get API - "/google" - used for login through google account. It redirects to Google OAuth Content Screen.
-   * @param req HTTP request object.
-   */
+
+  @Post("reset-password")
+  @UseGuards(ForgetPasswordGuard)
+  @UseInterceptors(TransformInterceptor)
+  @ApiOperation({
+    description: "Reset Password",
+    summary: "Reset Password .",
+  })
+  @ApiUnauthorizedResponse({ description: "Session Expired!" })
+  async ResetPassword(@Req() req: Request,@Body() password:ResetPasswordDto) {
+    const user = req.user;
+    return await this.authService.resetPassword(password, user);
+  }
+ 
   @Get("google")
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({
@@ -188,17 +198,6 @@ if(!user) {
     // NOTE: For UI:${req.protocol}://${req.get("host")}/auth/google_oauth2
   }
 
-  // NOTE: FIXME: TODO:
-  /**
-   * You need to deploy the backend and frontend first, if locally, then use ngrok
-   *
- 
-   * Get API - "/apple/callback" - used for login through apple account. It is a webhook hit by Frontend with user information and jwt token sent from Apple to frontend
-   * @param req HTTP request object containing user information from apple.
-   * @returns created or logged in user object, token for authentication and response status.
-   * @throws ConflictException if the user with that email already exists.
-   * @throws UnauthorizedException if credentials are invalid.
-   */
   @Post("apple/callback")
   @ApiOkResponse({
     description: "Created or found Existing user and Login successful",

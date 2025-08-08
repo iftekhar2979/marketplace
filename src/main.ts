@@ -18,6 +18,8 @@ import { expressSession } from "./session-management";
 // import { loadSecretsFromAWS } from "./configs/app.config";
 import { createDataSource } from "./configs/ormconfig";
 import { runMigrations } from "./migration-runner";
+import { join } from "path";
+import { loadSecretsFromAWS } from "./configs/app.config";
 
 /**
  * function for bootstraping the nest application
@@ -31,8 +33,6 @@ async function bootstrap() {
   const dataSource = createDataSource();
   // Run Auto Migrations
   await runMigrations(dataSource, false); // Set to true to exit on migration failure
-
-
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     cors: true,
     bodyParser: true,
@@ -56,6 +56,8 @@ async function bootstrap() {
     optionsSuccessStatus: 204, // Set the success status code for preflight requests
     maxAge: 86400, // Cache the preflight response for 24 hours (in seconds)
   };
+  app.useStaticAssets(join(__dirname, '..','..', 'public'));
+  console.log("Static assets served from:", join(__dirname, '..','..', 'public'));
 
   app.enableCors(corsOptions);
   app.use(cookieParser());
@@ -104,7 +106,7 @@ async function bootstrap() {
              */
           ],
           styleSrc: ["'self'", "https:", "http:", "'unsafe-inline'"],
-          imgSrc: ["'self'", "blob:", "validator.swagger.io"],
+          imgSrc: ["'self'", "blob:", "validator.swagger.io","*"],
           fontSrc: ["'self'", "https:", "data:"],
           childSrc: ["'self'", "blob:"],
           styleSrcAttr: ["'self'", "'unsafe-inline'", "http:"],

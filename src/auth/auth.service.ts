@@ -142,8 +142,44 @@ export class AuthService {
     if (!verification || (await verification).expiresAt < new Date()) {
       throw new NotFoundException("OTP expired");
     }
-    return {message: "OTP verified successfully", data:{}};
- 
+    console.log(verification_type)
+    if( verification.type === OtpType.FORGOT_PASSWORD) {
+      const user = await this.userRepository.findOne({ where: { id: user_id } }) as any;
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+      user.verification_type = OtpType.FORGOT_PASSWORD;
+      const token = this.jwtService.sign({ id:user_id, verification_type:OtpType.FORGOT_PASSWORD });
+      return { message: "OTP verified successfully", data:{},token };
+    }
+    return {message: "OTP verified successfully", data:{},status:"success"};
+  }
+  async resetPassword(resetPasswordDto: ResetPasswordDto, user) {
+const { password, passwordConfirm } = resetPasswordDto;
+    if (password !== passwordConfirm) {
+      throw new BadRequestException("Password does not match with passwordConfirm");
+    }
+    this.logger.log("Masking Password", AuthService.name);
+    console.log(user)
+    const userinfo = await this.userRepository.findOne({ where: { id: user.id } });
+    if (!user) {
+      throw new NotFoundException("User not found");   
+    }
+    console.log(user)
+    if (user.verification_type !== OtpType.FORGOT_PASSWORD) {
+      throw new BadRequestException("Invalid verification type for password reset");
+    }
+  const isPassMatched = await argon2verify(userinfo.password, password);
+    if (isPassMatched) {
+      throw new BadRequestException("New password cannot be the same as the old password");
+    }
+    this.logger.log("Hashing Password", AuthService.name);
+0
+    const hashedPassword = await argon2hash(password);
+    userinfo.password = hashedPassword; 
+    this.logger.log("Saving Updated User", AuthService.name);
+    await this.userRepository.save(userinfo);
+    return { message: "Password reset successfully", status: "success", data: null };
   }
   async loginPassport(loginUserDto: LoginUserDto) {
     const { email, password } = loginUserDto;
@@ -199,7 +235,7 @@ export class AuthService {
     this.mailService.sendPasswordUpdateEmail(user);
 
     this.logger.log("Login the user and send the token again", AuthService.name);
-    const token: string = await this.signToken(user);
+    const token: string = await this.jwtService.sign(user);
 
     return { user, token };
   }
@@ -240,9 +276,7 @@ export class AuthService {
      if (existingOtp?.createdAt) {
     const now = Date.now();
     const otpCreatedAt = existingOtp.createdAt.getTime();
-    console.log(now,otpCreatedAt)
     const timeDifference = Date.now() - otpCreatedAt
-console.log(timeDifference)
     if (timeDifference < 1000*60) {
       throw new BadRequestException("You can only request a new OTP after 1 minute.");
     }
@@ -261,7 +295,7 @@ console.log(timeDifference)
     if (!user) {
       throw new NotFoundException("User not found");
     }
-    const token = await this.signToken({user_id: user.id, verification_type: OtpType.FORGOT_PASSWORD});
+    const token = await this.jwtService.sign({id: user.id, verification_type: OtpType.FORGOT_PASSWORD});
   await this.resendOtp({ user});
    return { message: "Forgot password email sent successfully", status: "success", data: null ,token};
   }
@@ -278,6 +312,13 @@ console.log(timeDifference)
     }
   await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
     return { message: "OTP resent successfully", status: "success", data:null};
+  }
+  async uploadImage({imageUrl,user}:{imageUrl:string,user:User}) {
+    const updateUser = await this.userRepository.update(user.id, { image: imageUrl });
+    if (!updateUser) {
+      throw new NotFoundException("User not found");
+    }
+    return { message: "Image uploaded successfully", status: "success", data: null}
   }
 
 }

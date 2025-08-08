@@ -17,11 +17,12 @@ import { Transform } from "class-transformer";
 
 export class PreSignedUrlDTO {
   @ApiProperty({ required: true, description: "upload file name" })
-  @MaxLength(50)
+  @MaxLength(500)
   @MinLength(1)
   @IsString()
   @IsNotEmpty()
   fileName: string;
+
 
   @ApiProperty({ required: true, description: "Primary path name of the files", enum: PrimaryPaths })
   @IsEnum(PrimaryPaths, {

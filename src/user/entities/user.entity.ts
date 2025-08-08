@@ -50,7 +50,9 @@ export class User {
   @Column({ unique: true, length: 100 })
   @ApiProperty()
   email: string;
-
+  @Column({ type: "varchar",  nullable: true })
+  @ApiProperty()
+  image: string;
   /**
    * hashed password of user.
    */

@@ -1,17 +1,13 @@
-
 import {
   Injectable,
   ExecutionContext,
-  UnauthorizedException,
-  BadRequestException,
-  Inject,
+  UnauthorizedException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
-// import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
-export class JwtAuthGuard {
+export class JwtAuthenticationGuard {
   constructor(
     private readonly jwtService: JwtService, // Inject JwtService
     private readonly userService: UserService, // Inject UserService
@@ -27,10 +23,10 @@ export class JwtAuthGuard {
         'You are not authorized to access this resource!',
       );
     }
-    console.log(token)
     try {
       const payload = await this.jwtService.verifyAsync(token);
       const user = await this.userService.getUserById(payload.id);
+      console.log(user)
       if (!user) {
         throw new Error('User is Not Available!');
       }

@@ -30,3 +30,14 @@ export class UpdateUserDto {
   @IsOptional()
   lastName?: string;
 }
+
+export class UpdateProfilePictureDto {
+  /**
+   * First Name of user
+   */
+  @ApiPropertyOptional({ required: true, description: "Image url is requied" })
+  @IsString({ message: "Image url must be string" })
+  image: string;
+
+  
+}

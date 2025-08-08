@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { BadRequestException, createParamDecorator, ExecutionContext } from "@nestjs/common";
 import { User } from "../../user/entities/user.entity";
 
 /**
@@ -9,4 +9,27 @@ export const GetUser = createParamDecorator((data: unknown, ctx: ExecutionContex
   const req = ctx.switchToHttp().getRequest();
   // req.user.password = undefined;
   return req.user;
+});
+export const GetFileDestination = createParamDecorator((data: unknown, ctx: ExecutionContext):string => {
+  const req = ctx.switchToHttp().getRequest();
+  const file = req.file;
+  if (!file) {
+    throw new BadRequestException("File not found in request");
+  }
+  const length= file.path.split('/').length;
+  return file.path.split('/').slice(1,length).join('/');
+});
+export const GetFilesDestination = createParamDecorator((data: unknown, ctx: ExecutionContext):string => {
+  const req = ctx.switchToHttp().getRequest();
+  const file = req.files;
+  if (!file) {
+    throw new BadRequestException("File not found in request");
+  }
+  const destinations = file.images.map((file: Express.Multer.File) => {
+
+    const length= file.path.split('/').length;
+
+    return file.path.split('/').slice(1,length).join('/');
+})
+return destinations
 });

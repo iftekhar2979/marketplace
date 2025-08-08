@@ -1,4 +1,4 @@
-import { forwardRef, Module } from "@nestjs/common";
+import { forwardRef, Global, Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -24,6 +24,7 @@ import { Otp } from "src/otp/entities/otp.entity";
  *      {@link PassportModule} - it enables us to setup multiple types of authentication.
  *      {@link JwtModule} - it is used for token creation for authentication.
  */
+@Global()
 @Module({
   imports: [
     ConfigModule,
@@ -47,6 +48,7 @@ import { Otp } from "src/otp/entities/otp.entity";
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy],
-  exports: [AuthService, PassportModule, JwtStrategy],
+  exports: [AuthService, PassportModule, JwtStrategy, JwtModule],
+
 })
 export class AuthModule {}

@@ -59,4 +59,15 @@ export class UserService {
 
     return currentUser;
   }
+  async updateImage({imageUrl, user}: {imageUrl: string, user: User}) {
+    this.logger.log(`Updating user image`, UserService.name);
+    const updatedUser = await this.userRepository.update(user.id, { image: imageUrl });
+    
+    if (!updatedUser) {
+      throw new NotFoundException("User not found");
+    }
+
+    this.logger.log(`Image updated successfully`, UserService.name);
+    return { message: "Image uploaded successfully", status: "success", data: null };
+  }
 }
