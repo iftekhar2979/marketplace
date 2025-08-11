@@ -11,6 +11,7 @@ import { UserModule } from 'src/user/user.module';
 @Module({
   imports:[TypeOrmModule.forFeature([Product, ProductImage]), AuthModule,UserModule],
   controllers: [ProductsController],
-  providers: [ProductsService]
+  providers: [ProductsService],
+  exports:[ProductsService]
 })
 export class ProductsModule {}

@@ -4,6 +4,15 @@ export enum OrderStatus {
     ACCEPTED = 'accepted',
     REJECTED = 'rejected',
     CANCELLED = 'cancelled',   
-    PACKED = 'packed',
-    SHIPPED = 'shipped', 
+    REFUNDED = 'refunded'
+
+}
+
+export enum PaymentStatus {
+    PENDING = 'pending',
+    COMPLETED = 'completed' ,
+    FAILED = 'failed',
+    REFUNDED = 'refunded',
+    CANCELED = 'canceled' ,
+    SUBMITTED = 'submitted'
 }

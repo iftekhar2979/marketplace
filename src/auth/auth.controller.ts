@@ -167,9 +167,9 @@ if(!user) {
     summary: "Verify the otp .",
   })
   @ApiUnauthorizedResponse({ description: "Session Expired!" })
-  async VerifyOtp(@Req() req: Request,@Body() otp:OtpVerificationDto) {
-
-     const token = await this.authService.OtpVerify(otp);
+  async VerifyOtp(@Body() otp:OtpVerificationDto ,@GetUser()  user:User) {
+console.log(user)
+     const token = await this.authService.OtpVerify(otp,user);
     return token
   }
 

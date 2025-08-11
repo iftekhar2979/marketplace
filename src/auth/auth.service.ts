@@ -118,21 +118,22 @@ export class AuthService {
 
     return await this.verificationRepository.save(verification);
   }
-  async OtpVerify(otpDto: OtpVerificationDto) {
-    const { user_id,otp,verification_type } = otpDto;
+  async OtpVerify(otpDto: OtpVerificationDto,userInfo:User) {
+    const { otp,verification_type } = otpDto;
 
     this.logger.log("Creating Verification", AuthService.name);
-    const verification = await this.otpService.findOtpByUserId(user_id);
+    const verification = await this.otpService.findOtpByUserId(userInfo.id);
 
        if (!verification) {
       throw new NotFoundException("OTP not found or expired");
     }
     if(verification.attempts >= 3) {
-      await this.otpService.removeOtpByUserId(user_id);
+      await this.otpService.removeOtpByUserId(userInfo.id);
       throw new BadRequestException("Too many attempts, please request a new OTP");
     }
     if( verification.otp !== otp) { 
-      await this.otpService.updateOtpAttempts(user_id, verification.attempts + 1);
+      console.log(verification ,otp)
+      await this.otpService.updateOtpAttempts(userInfo.id, verification.attempts + 1);
       throw new BadRequestException("Invalid OTP");
     }
     if( verification.type !== verification_type) { 
@@ -142,14 +143,13 @@ export class AuthService {
     if (!verification || (await verification).expiresAt < new Date()) {
       throw new NotFoundException("OTP expired");
     }
-    console.log(verification_type)
     if( verification.type === OtpType.FORGOT_PASSWORD) {
-      const user = await this.userRepository.findOne({ where: { id: user_id } }) as any;
+      const user = await this.userRepository.findOne({ where: { id:userInfo.id } }) as any;
       if (!user) {
         throw new NotFoundException("User not found");
       }
       user.verification_type = OtpType.FORGOT_PASSWORD;
-      const token = this.jwtService.sign({ id:user_id, verification_type:OtpType.FORGOT_PASSWORD });
+      const token = this.jwtService.sign({ id:user.id, verification_type:OtpType.FORGOT_PASSWORD });
       return { message: "OTP verified successfully", data:{},token };
     }
     return {message: "OTP verified successfully", data:{},status:"success"};

@@ -221,4 +221,11 @@ await this.productRepository.save(product);
 
     return {message:"Product Retrived Successfully",data:product,statusCode:200,status:"success"};
   }
+
+  async findByIdWithSeller(productId: number): Promise<Product> {
+    return await this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['user'],
+    });
+}
 }

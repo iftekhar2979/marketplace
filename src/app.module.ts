@@ -25,6 +25,15 @@ import { FavouritesModule } from './favourites/favourites.module';
 import { OffersModule } from './offers/offers.module';
 import { OrdersModule } from './orders/orders.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { CategoryModule } from './category/category.module';
+import { SizesModule } from './sizes/sizes.module';
+import { WalletsModule } from './wallets/wallets.module';
+import { TransectionsModule } from './transections/transections.module';
+import { WithdrawsService } from './withdraws/withdraws.service';
+import { WithdrawsModule } from './withdraws/withdraws.module';
+import { ConversationsModule } from './conversations/conversations.module';
+import { MessagesModule } from './messages/messages.module';
+import { ParticipantsModule } from './participants/participants.module';
 
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
@@ -80,6 +89,14 @@ import { DeliveryModule } from './delivery/delivery.module';
     OffersModule,
     OrdersModule,
     DeliveryModule,
+    CategoryModule,
+    SizesModule,
+    WalletsModule,
+    TransectionsModule,
+    WithdrawsModule,
+    ConversationsModule,
+    MessagesModule,
+    ParticipantsModule,
   
   ],
   controllers: [AppController],
@@ -89,6 +106,7 @@ import { DeliveryModule } from './delivery/delivery.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    WithdrawsService,
   ],
 })
 export class AppModule implements NestModule {

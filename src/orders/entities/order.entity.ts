@@ -9,13 +9,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  OneToOne,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Product } from 'src/products/entities/products.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
 import { User } from 'src/user/entities/user.entity';
-import { OrderStatus } from '../enums/orderStatus';
-
+import { OrderStatus, PaymentStatus } from '../enums/orderStatus';
+import { Delivery } from 'src/delivery/entities/delivery.entity';
 
 @Entity('orders')
 export class Order {
@@ -23,50 +24,64 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ example: 'uuid-of-buyer', description: 'Buyer user ID' })
-  @Column()
-  buyer_id: string;
+  // 👤 Seller relation
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'seller_id' })
+  seller: User;
 
   @ApiProperty({ example: 'uuid-of-seller', description: 'Seller user ID' })
   @Column()
   seller_id: string;
 
-  @ApiProperty({ example: 12, description: 'Product ID being purchased' })
-  @Column()
-  product_id: number;
+  // 👤 Buyer relation
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'buyer_id' })
+  buyer: User;
 
-  @ApiProperty({ example: 'pending', description: 'Status of the order (pending, confirmed, delivered, etc.)' })
-  @Column({ default: 'pending' })
+  @ApiProperty({ example: 'uuid-of-buyer', description: 'Buyer user ID' })
+  @Column()
+  buyer_id: string;
+
+  // 📦 Product relation
+ @OneToOne(() => Product, { onDelete: 'CASCADE' })
+@JoinColumn({ name: 'product_id' })
+product: Product;
+
+
+  // 💬 Accepted Offer
+  @OneToOne(() => Offer, (offer) => offer.order, { cascade: true })
+  @JoinColumn({ name: 'offer_id' })
+  accepted_offer: Offer;
+
+  @ApiProperty({ example: 123, description: 'Accepted Offer ID' })
+  @Column()
+  offer_id: number;
+
+  // 🚚 Delivery
+  @OneToOne(() => Delivery, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'delivery_id' })
+  delivery: Delivery;
+
+  @ApiProperty({ example: 'uuid-of-delivery', description: 'Delivery ID' })
+  @Column({ nullable: true })
+  delivery_id: string;
+
+  // 📦 Order status
+  @ApiProperty({ example: 'pending', description: 'Status of the order (pending, confirmed, etc.)' })
+  @Column({ default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @ApiProperty({ description: 'Timestamp when the order was created' })
+  // 💳 Payment status
+  @ApiProperty({ example: 'pending', description: 'Payment status' })
+  @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
+  paymentStatus: PaymentStatus;
+
+  // ⏱️ Timestamps
+  @ApiProperty({ description: 'Created at' })
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: Date;
 
-  @ApiProperty({ description: 'Timestamp when the order was last updated' })
+  @ApiProperty({ description: 'Updated at' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
-
-  // 👤 Buyer relation (optional)
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-@JoinColumn({ name: 'buyer_id' }) 
-  buyer: User;
-
-  // 👤 Seller relation (optional)
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-   @JoinColumn({ name: 'seller_id' })
-  seller: User;
-
-  // 📦 Product relation
-   @ManyToOne(() => Product, (product) => product.id, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'product_id' })
-  product: Product;
-  // 💬 Offers related to this order
-  @OneToMany(() => Offer, (offer) => offer.order ,  { cascade: true })
-  offers: Offer[];
-
-  // 🚚 Delivery (optional placeholder)
-  @ApiProperty({ example: 'pickup', description: 'Delivery method or status' })
-  @Column({ nullable: true })
-  delivery: OrderStatus |  null;
 }
