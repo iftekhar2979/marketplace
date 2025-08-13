@@ -8,6 +8,10 @@ import { OfferStatus } from "./enums/offerStatus.enum";
 import {Order} from  "../orders/entities/order.entity"
 import { SendOfferDto } from "./dto/sendOffer.dto";
 import { ResponseInterface } from "src/common/types/responseInterface";
+import { ConversationsService } from "src/conversations/conversations.service";
+import { NotificationsService } from "src/notifications/notifications.service";
+import { NotificationAction, NotificationRelated } from "src/notifications/entities/notifications.entity";
+import { UserRoles } from "src/user/enums/role.enum";
 
 @Injectable()
 export class OfferService {
@@ -16,6 +20,8 @@ export class OfferService {
     private readonly offerRepo: Repository<Offer>,
     private readonly productService: ProductsService,
     private readonly orderService: OrdersService, // delegate order creation
+    private readonly coversationService: ConversationsService,
+    private readonly notificationService: NotificationsService
   ) {}
 
   async createOffer(payload:SendOfferDto): Promise<ResponseInterface<Offer>> {
@@ -36,7 +42,17 @@ export class OfferService {
       price,
       status: OfferStatus.PENDING,
     });
-
+   const conversation = await this.coversationService.getOrCreate(product.id,[product.user_id , buyer_id])
+   console.log(conversation)
+await this.notificationService.createNotification({
+  userId:product.user_id,
+  related:NotificationRelated.CONVERSATION,
+  action:NotificationAction.CREATED,
+  msg:`${product.product_name} has a new offer for your review!`,
+  targetId:conversation.id,
+  isImportant:true,
+  notificationFor:UserRoles.USER
+})
     return {message:"Offer sent Successfully!",status:'success',statusCode:201,data: await this.offerRepo.save(offer)}
   }
 

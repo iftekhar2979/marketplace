@@ -14,6 +14,7 @@ import {
   ClassSerializerInterceptor,
   Session,
   NotFoundException,
+  HttpCode,
   // ClassSerializerInterceptor,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
@@ -111,6 +112,7 @@ export class AuthController {
    * @throws UnauthorizedException with message in case user is not logged in.
    */
   @Post("login")
+  @HttpCode(200)
   @UseGuards(LocalAuthGuard)
   @UseInterceptors(TransformInterceptor)
   @ApiOperation({
@@ -125,7 +127,7 @@ export class AuthController {
 
     const token = await this.authService.signToken(user);
 
-    return { status: "success", data:user, token };
+    return { status: "success", data:user, token ,statusCode:200 };
   }
 
 

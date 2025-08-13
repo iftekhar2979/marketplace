@@ -5,6 +5,8 @@ import { User } from "./entities/user.entity";
 import { MailService } from "../mail/mail.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { InjectLogger } from "../shared/decorators/logger.decorator";
+import { CreateAdminDto } from "src/auth/dto/create-user.dto";
+import { argon2hash } from "src/utils/hashes/argon2";
 
 /**
  * This service contain contains methods and business logic related to user.
@@ -15,18 +17,35 @@ export class UserService {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectLogger() private readonly logger: Logger,
     private readonly mailService: MailService
-  ) {}
+) {}
 
   async getAllUsers(): Promise<User[]> {
     this.logger.log("getting all users data", UserService.name);
     const users = await this.userRepository.find();
 
     return users;
+  } 
+  async createSuperAdmin(body:CreateAdminDto): Promise<string> {
+    //  let { password } = body;
+    body.password = await argon2hash(body.password); 
+    // console.log(body)
+    const user = this.userRepository.insert(body); 
+
+    return "Admin Created Successfully"
   }
 
   async getUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } ,select: ["id", "firstName", "lastName", "email", "roles"] });
     return user;
+  }
+  async getUser(id:string){
+   return await this.userRepository.findOneByOrFail({ id })
+  }
+  async getUserByEmail(email:string){
+   return await this.userRepository.findOne({where:{email}})
+  }
+  async getMultipleUserByIds(userIds:string[]){
+ return await this.userRepository.findByIds(userIds);
   }
 
   async updateUserData(updateUserDto: UpdateUserDto, user: User) {

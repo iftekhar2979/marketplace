@@ -4,6 +4,7 @@ import {
   IsAlpha,
   IsEmail,
   IsNotEmpty,
+  IsNumberString,
   IsString,
   Matches,
   MaxLength,
@@ -11,6 +12,7 @@ import {
   Validate,
 } from "class-validator";
 import { IsNotAdmin } from "../../shared/decorators/not-admin.decorator";
+import { UserRoles } from "src/user/enums/role.enum";
 
 export class CreateUserDto {
   /**
@@ -47,6 +49,20 @@ export class CreateUserDto {
   @Transform(({ value }) => value.trim().toLowerCase())
   email: string;
 
+  @ApiProperty({ required: true, description: "Address of user" })
+  @IsString({ message: "Address can not be only numbers" })
+  @IsNotEmpty({ message: "Address can not be empty" })
+  @Transform(({ value }) => value.trim().toLowerCase())
+  address: string;
+
+  @ApiProperty({ required: true, description: "Phone of user" })
+  @IsNumberString()
+  @MinLength(9)
+  @MaxLength(18)
+  @IsNotEmpty({ message: "phone can not be empty" })
+  @Transform(({ value }) => value.trim().toLowerCase())
+  phone: string;
+
   /**
    * Password user wants provide
    */
@@ -58,4 +74,14 @@ export class CreateUserDto {
     message: "Weak Password",
   })
   password: string;
+}
+
+export class CreateAdminDto  extends CreateUserDto{
+  
+  @IsNumberString()
+  @MinLength(9)
+  @MaxLength(18)
+  @IsNotEmpty({ message: "Role Should be admin" })
+  roles: UserRoles[];
+
 }

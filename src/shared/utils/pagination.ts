@@ -1,11 +1,15 @@
 import { func } from "joi";
-
-export function pagination({page,limit, total}:{page:string, limit:string, total:number }) {
-    const limitNumber = parseInt(limit, 10) || 10;
-  const totalPages = Math.ceil(total / limitNumber);
+export interface Pagination {
+    page: number,
+    limit: number,
+    total :number,
+    totalPages :number,
+  }
+export function pagination({page=1,limit=10, total}:{page:number, limit:number, total:number }) {
+  const totalPages = Math.ceil(total / limit);
   return {
-    page: parseInt(page, 10),
-    limit: parseInt(limit, 10),
+    page,
+    limit,
     total,
     totalPages,
   };

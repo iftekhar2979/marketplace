@@ -61,6 +61,13 @@ export class User {
   @Exclude({ toPlainOnly: true })
   password: string;
 
+  @Column({ nullable: true })
+  @Exclude({ toPlainOnly: true })
+  address: string;
+  @Column({ nullable: true })
+  @Exclude({ toPlainOnly: true })
+  phone: string;
+
   /**
    * role of user. default is UserRoles.USER.
    */
@@ -70,9 +77,9 @@ export class User {
     default: [UserRoles.USER],
     description: `String array, containing enum values, either ${UserRoles.USER} or ${UserRoles.ADMIN}`,
   })
-  roles: UserRoles[1]; // NOTE: You can change the size to assign multiple roles to a single user.
+  roles: UserRoles[]; // NOTE: You can change the size to assign multiple roles to a single user.
 
-  /**
+  /** 
    * timestamp for date of user creation.
    */
   @CreateDateColumn()

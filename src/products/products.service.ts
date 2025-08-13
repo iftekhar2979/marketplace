@@ -9,6 +9,10 @@ import { GetProductsQueryDto } from './dto/GetProductDto.dto';
 import { pagination } from 'src/shared/utils/pagination';
 import { UpdateProductDto } from './dto/updatingProduct.dto';
 import { ResponseInterface } from 'src/common/types/responseInterface';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationAction, NotificationRelated, NotificationType } from 'src/notifications/entities/notifications.entity';
+import { UserRoles } from 'src/user/enums/role.enum';
+import { User } from 'src/user/entities/user.entity';
 // import { Product } from './entities/product.entity';
 // import { CreateProductDto } from './dto/create-product.dto';
 // import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,7 +26,19 @@ export class ProductsService {
 
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
+    private readonly notificationService: NotificationsService
   ) {}
+// async getProductById({product_id,status,}){
+
+// }
+ checkProductStatus(status:ProductStatus){
+if(status === ProductStatus.SOLD) {
+      throw new BadRequestException('Product is already sold');
+    }
+    if(status === ProductStatus.DELETED) {
+      throw new BadRequestException('Product is already Deleted');
+    }
+}
 
   async updateProductStatus(
     {id,user_id, status}:{id:number;user_id?:string;status:ProductStatus}
@@ -32,18 +48,14 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found.`);
     }
-    if(product.status === ProductStatus.SOLD) {
-      throw new BadRequestException('Product is already sold');
-    }
-    if(product.status === ProductStatus.DELETED) {
-      throw new BadRequestException('Product is already Deleted');
-    }
+    this.checkProductStatus(product.status)
+    
     return this.productRepository.save({
       ...product,
       status,
     });
   }
-  async create(createProductDto: CreateProductDto, userId: number) {
+  async create(createProductDto: CreateProductDto, user:User) {
     // Parse and validate numeric and boolean fields
     const sellingPrice = parseFloat(createProductDto.selling_price);
     const purchasingPrice = parseFloat(createProductDto.phurcasing_price); // keep original spelling if necessary
@@ -56,7 +68,7 @@ export class ProductsService {
 
     // Prepare Product entity
     const product = new Product();
-    product.user_id = userId.toString(); // convert userId to string
+    product.user_id = user.id  // convert userId to string
     product.product_name = createProductDto.product_name;
     product.selling_price = sellingPrice;
     product.purchasing_price = purchasingPrice;
@@ -81,6 +93,15 @@ export class ProductsService {
     console.log(product.images)
   await this.productImageRepository.insert(product.images); 
     }
+    await this.notificationService.createNotification(
+      {userId:user.id,
+        related:NotificationRelated.PRODUCT,
+        msg:`${user.firstName} has listed a product for your review!`,
+        type:NotificationType.SUCCESS, 
+        targetId:product.id,
+        notificationFor:UserRoles.ADMIN ,
+        action:NotificationAction.CREATED,
+        isImportant: true})
 
     return {message:"Product created successfully", data: await this.productRepository.save(product) ,statusCode:201};
   }
@@ -165,7 +186,7 @@ where.status = ProductStatus.AVAILABLE;
       message: "Products retrieved successfully",
       statusCode: 200,
       data,
-      pagination: pagination({page,limit, total})
+      pagination: pagination({page : parseInt(page),limit : parseInt(page), total})
     };
   }
 
@@ -208,17 +229,17 @@ await this.productRepository.save(product);
     }
   }
 
-   async getProductById(id: number): Promise<ResponseInterface<Product>> {
-    console.log(id)
-    const product = await this.productRepository.findOne({
+  async getProduct(id:number):Promise<Product>{
+    return await this.productRepository.findOne({
       where: { id },
       relations: [ 'user'], 
     });
-
+  }
+   async getProductById(id: number): Promise<ResponseInterface<Product>> {
+    const product = await this.getProduct(id)
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
-
     return {message:"Product Retrived Successfully",data:product,statusCode:200,status:"success"};
   }
 

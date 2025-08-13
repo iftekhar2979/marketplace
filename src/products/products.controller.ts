@@ -36,7 +36,7 @@ constructor(private readonly productsService: ProductsService) {}
     @GetFilesDestination() filesDestination: string[],
   ) {
     createProductDto.images = filesDestination;
-    return this.productsService.create(createProductDto, user.id);
+    return this.productsService.create(createProductDto, user);
   }
 
 @Post()

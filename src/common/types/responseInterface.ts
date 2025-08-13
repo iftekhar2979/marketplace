@@ -3,4 +3,10 @@ export interface  ResponseInterface<T> {
   message: string;
   data?: T;    
   statusCode?: number;
+  pagination ? :{
+    page:number,
+    limit:number,
+    total:number,
+    totalPages:number
+  }
 }

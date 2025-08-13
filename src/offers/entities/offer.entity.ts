@@ -46,7 +46,7 @@ order_id: number;
   @JoinColumn({ name: 'order_id' }) // Optional: ensures FK column is named `order_id`
   order: Order;
  @ApiProperty({ example: 123, description: 'Associated order entity' })
-  @OneToOne(() => Product, (product) => product.id, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, (product) => product.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' }) // Optional: ensures FK column is named `order_id`
   product: Product;
 

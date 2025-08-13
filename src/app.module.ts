@@ -34,6 +34,9 @@ import { WithdrawsModule } from './withdraws/withdraws.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { MessagesModule } from './messages/messages.module';
 import { ParticipantsModule } from './participants/participants.module';
+import { AttachmentModule } from './attachment/attachment.module';
+import { SeederModule } from './seeder/seeder.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
@@ -97,6 +100,9 @@ import { ParticipantsModule } from './participants/participants.module';
     ConversationsModule,
     MessagesModule,
     ParticipantsModule,
+    AttachmentModule,
+    SeederModule,
+    NotificationsModule,
   
   ],
   controllers: [AppController],
