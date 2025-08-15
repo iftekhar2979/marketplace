@@ -7,13 +7,16 @@ import { Messages } from 'src/messages/entities/messages.entity';
 import { ParticipantsModule } from 'src/participants/participants.module';
 import { ProductsModule } from 'src/products/products.module';
 import { UserModule } from 'src/user/user.module';
+import { MessagesModule } from 'src/messages/messages.module';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports:[
-TypeOrmModule.forFeature([Conversations, Messages]),
+TypeOrmModule.forFeature([Conversations,Messages]),
 ParticipantsModule ,
 ProductsModule ,
-UserModule
+UserModule ,
+AuthModule
 
   ],
   providers: [ConversationsService],

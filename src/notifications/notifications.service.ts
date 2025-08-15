@@ -5,6 +5,7 @@ import { GetNotificationsResponse } from './types/notification.response';
 import { pagination } from 'src/shared/utils/pagination';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
+import { UserRoles } from 'src/user/enums/role.enum';
 
 @Injectable()
 export class NotificationsService {
@@ -53,7 +54,7 @@ export class NotificationsService {
     type?: NotificationType;
     msg: string;
     targetId: number;
-    notificationFor?: string;
+    notificationFor?: UserRoles;
     isImportant?: boolean;
   }[]): Promise<Notifications[]> {
     // Create an array of notifications to insert
@@ -74,46 +75,69 @@ export class NotificationsService {
     return await this.notificationsRepository.save(notifications);
   }
   async getNotifications({
-    userId,
-    page,
-    limit,
-    isRead,
-    related,
-    isImportant,
-  }): Promise<GetNotificationsResponse> {
-    const skip = (page - 1) * limit;
-    const take = limit; 
+  userId,
+  page,
+  limit,
+  isRead,
+  related,
+  isImportant,
+  notificationFor
+}: {
+  userId: string;
+  page: number;
+  limit: number;
+  isRead: boolean;
+  related: string;
+  isImportant: boolean;
+  notificationFor: string;
+}): Promise<GetNotificationsResponse> {
+  const skip = (page - 1) * limit;
+  const take = limit;
+console.log(userId)
+  // Start building the query
+  const query = this.notificationsRepository.createQueryBuilder('notification')
+    .where('notification.user_id = :userId', { userId });
 
-    // Construct the query with dynamic filters
-    const query = this.notificationsRepository.createQueryBuilder('notifications')
-      .where('notification.user_id = :userId', { userId })
-      .andWhere('notification.isRead = :isRead', { isRead })
-      .andWhere('notification.related = :related', { related })
-      .andWhere('notification.isImportant = :isImportant', { isImportant })
-      .skip(skip)
-      .take(take)
-      .orderBy('notification.created_at', 'DESC');
-
-    const [notifications, total] = await query.getManyAndCount();
-
-    const data = notifications.map(notification => ({
-      id: notification.id,
-      msg: notification.msg,
-      related: notification.related,
-      action: notification.action,
-      type: notification.type,
-      target_id: notification.target_id,
-      isRead: notification.isRead,
-      isImportant: notification.isImportant,
-      created_at: notification.created_at.toISOString(),
-      updated_at: notification.updated_at.toISOString(),
-    }));
-
-    return {
-      message: 'Notifications retrieved successfully',
-      statusCode: 200,
-      data,
-      pagination: pagination({page,limit,total}),
-    };
+  // Add filters dynamically only if they are provided
+  if (isRead !== undefined) {
+    query.andWhere('notification.isRead = :isRead', { isRead });
   }
+  if (related) {
+    query.andWhere('notification.related = :related', { related });
+  }
+  if (notificationFor) {
+    query.andWhere('notification.notificationFor = :notificationFor', { notificationFor });
+  }
+  if (isImportant !== undefined) {
+    query.andWhere('notification.isImportant = :isImportant', { isImportant });
+  }
+
+  // Apply pagination
+  query.skip(skip)
+    .take(take)
+    .orderBy('notification.created_at', 'DESC');
+
+  // Fetch the notifications and total count
+  const [notifications, total] = await query.getManyAndCount();
+
+  const data = notifications.map(notification => ({
+    id: notification.id,
+    msg: notification.msg,
+    related: notification.related,
+    action: notification.action,
+    type: notification.type,
+    target_id: notification.target_id,
+    isRead: notification.isRead,
+    isImportant: notification.isImportant,
+    created_at: notification.created_at.toISOString(),
+    updated_at: notification.updated_at.toISOString(),
+  }));
+
+  return {
+    message: 'Notifications retrieved successfully',
+    statusCode: 200,
+    data,
+    pagination: pagination({ page, limit, total }),
+  };
+}
 }

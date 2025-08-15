@@ -10,6 +10,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { MessagesModule } from 'src/messages/messages.module';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
     OrdersModule,
     ProductsModule,
     ConversationsModule,
-    NotificationsModule
+    NotificationsModule,
   ],
   controllers: [OffersController],
   providers: [OfferService]

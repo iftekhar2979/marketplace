@@ -23,6 +23,13 @@ export class GetProductsQueryDto {
   @IsOptional()
   @IsString()
   category?: string;
+  @ApiPropertyOptional({ description: 'My post and others post', example: 'own' })
+  @IsString()
+  type : 'own' | 'global';
+  @ApiPropertyOptional({ description: 'User UUid', example: 'UUID' })
+  @IsOptional()
+  @IsString()
+  userId ?: string;
 
   @ApiPropertyOptional({ description: 'Price range in format min-max', example: '100-300' })
   @IsOptional()

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConversationParticipant } from './entities/participants.entity';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { Conversations } from 'src/conversations/entities/conversations.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Product } from 'src/products/entities/products.entity';
@@ -24,16 +24,21 @@ export class ParticipantsService {
     return this.participantRepo.save(participant);
   }
 
-  async addMultiple(conversation: Conversations, users: User[],product:Product) {
-    const participants = users.map((user) =>
-      this.participantRepo.create({ conversation, user ,product }),
-    );
-    console.log(participants)
-    return this.participantRepo.save(participants);
+ async addMultiple(conversation: Conversations, users: User[], product: Product, manager?: EntityManager) {
+  const participants = users.map(user => ({
+    user,
+    conversation,
+    product,
+  }));
+
+  if (manager) {
+    await manager.getRepository(ConversationParticipant).save(participants);
+  } else {
+    await this.participantRepo.save(participants);
   }
+}
   async checkChatAlreadyExist(query: { conversation_id?: number, product_id?: number, user_ids?: string[] }) {
     const { conversation_id, product_id, user_ids } = query;
-
     // Build query conditions dynamically based on available input
     const whereConditions: any = {};
 if(product_id){
@@ -58,12 +63,20 @@ if(product_id){
 }
 
 
-  async getParticipants(conversationId: number): Promise<ConversationParticipant[]> {
+ async getParticipants(conversationId: number): Promise<ConversationParticipant[]> {
     return this.participantRepo.find({
       where: { conversation: { id: conversationId } },
-      relations: ['user'],
-    });
-  }
+      relations: ['user'],  // We are joining the user relation
+      select: {
+        user: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          image: true,
+          id: true,
+        },
+      },
+    })}
 
   async muteParticipant(conversationId: number, userId: string) {
     const participant = await this.participantRepo.findOneOrFail({

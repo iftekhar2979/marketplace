@@ -7,11 +7,15 @@ import { Offer } from 'src/offers/entities/offer.entity';
 import { OrderStatus, PaymentStatus } from './enums/orderStatus';
 import { ResponseInterface } from "src/common/types/responseInterface";
 import { pagination } from 'src/shared/utils/pagination';
+import { NotificationAction, NotificationRelated, Notifications, NotificationType } from 'src/notifications/entities/notifications.entity';
+import { UserRoles } from 'src/user/enums/role.enum';
+import { NotificationsService } from 'src/notifications/notifications.service';
 @Injectable()
 export class OrdersService {
     constructor(
-        @InjectRepository(Order) private orderRepository: Repository<Order>
-    ){}
+        @InjectRepository(Order) private orderRepository: Repository<Order>,
+    private readonly notificaionService:NotificationsService
+      ){}
 async createOrderFromOffer(offer: Offer): Promise<Order> {
   console.log(offer)
   const order = this.orderRepository.create({
@@ -27,7 +31,42 @@ async createOrderFromOffer(offer: Offer): Promise<Order> {
     delivery: null,
     delivery_id: null,
   });
+const productName = offer.product.product_name
+  const notifications =[
+    {
 
+    userId: offer.buyer.id,
+    isImportant: true,
+    action: NotificationAction.UPDATED,
+    related: NotificationRelated.ORDER,
+    notificationFor: UserRoles.USER,
+    type: NotificationType.SUCCESS,
+    targetId: order.id,
+    msg: `${productName} is now ready to phurcase !`
+  },
+    {
+
+    userId: offer.seller.id,
+    isImportant: true,
+    action: NotificationAction.UPDATED,
+    related: NotificationRelated.ORDER,
+    notificationFor: UserRoles.USER,
+    type: NotificationType.INFO,
+    targetId: order.id,
+    msg: `${productName} is ready to sell!`
+  },
+    {
+    userId: null,
+    isImportant: true,
+    action: NotificationAction.UPDATED,
+    related: NotificationRelated.ORDER,
+    notificationFor: UserRoles.ADMIN,
+    type: NotificationType.INFO,
+    targetId: offer.order.id,
+    msg: `#${offer.order.id} both are agreed with negotiation!`
+  }
+]
+await this.notificaionService.bulkInsertNotifications(notifications)
   return await this.orderRepository.save(order);
 }
 

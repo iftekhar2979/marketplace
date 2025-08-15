@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, ILike, In, Repository } from 'typeorm';
-import { Product } from './entities/products.entity';
+import { FavouriteProduct, Product } from './entities/products.entity';
 import { ProductImage } from './entities/productImage.entity';
 import { CreateProductDto } from './dto/CreateProductDto.dto';
 import { ProductStatus } from './enums/status.enum';
@@ -90,7 +90,6 @@ if(status === ProductStatus.SOLD) {
         img.product_id = product.id; // link image to product
         return img;
     });
-    console.log(product.images)
   await this.productImageRepository.insert(product.images); 
     }
     await this.notificationService.createNotification(
@@ -108,13 +107,16 @@ if(status === ProductStatus.SOLD) {
   async findAll(
   page = 1,
   limit = 10,
-  filters?: { name?: string; category?: string; size?: string },
+  filters?: { name?: string; category?: string; size?: string ,userId ?:string , type:'own' | 'global' },
 ): Promise<{ data: Product[]; total: number; page: number; limit: number }> {
   const skip = (page - 1) * limit;
 
   const query = this.productRepository.createQueryBuilder('product')
     .leftJoinAndSelect('product.images', 'images');
 
+    if(filters.type =='own'){
+query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
+    }
   // Filters
   if (filters?.name) {
     query.andWhere('product.product_name ILIKE :name', { name: `%${filters.name}%` });
@@ -149,6 +151,7 @@ if(status === ProductStatus.SOLD) {
       price,
       page = '1',
       limit = '10',
+      
     } = query;
 
     const where: any = {};
@@ -161,6 +164,7 @@ if(status === ProductStatus.SOLD) {
     if (category) {
       where.category = ILike(`%${category}%`);
     }
+    
 
     if (size) {
       const sizes = size.split(',');
@@ -170,6 +174,9 @@ if(status === ProductStatus.SOLD) {
     if (price) {
       const [min, max] = price.split('-').map(Number);
       where.selling_price = Between(min || 0, max || Number.MAX_SAFE_INTEGER);
+    }
+    if(query.type === 'own'){
+      where.user_id  = query.userId
     }
 where.status = ProductStatus.AVAILABLE;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -232,9 +239,40 @@ await this.productRepository.save(product);
   async getProduct(id:number):Promise<Product>{
     return await this.productRepository.findOne({
       where: { id },
-      relations: [ 'user'], 
+      relations: [ 'user','favorites'], 
+      
     });
   }
+   async getProductifFavourites(id: number, userId ?: string): Promise<any> {
+     const product = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.favorites', 'favorite')  // Join with the favorites table
+      .leftJoinAndSelect('favorite.user', 'user')  // Join with the user associated with the favorite
+      .leftJoinAndSelect('product.images', 'image')  // Join with product images
+      .where('product.id = :id', { id })  // Filter by product id
+      .getOne();  // Get one product
+
+    // If the product doesn't exist, throw an exception
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    // Check if the product has been favorited by the user
+    const isFavorite = product.favorites.some(
+      (favorite) => favorite.user.id === userId
+    );
+delete product.favorites
+    // Return product with favorite status (true or false) and associated images
+    return {
+      message: 'Product retrieved successfully',
+      statusCode: 200,
+      data: {
+        ...product,  // Spread product properties
+        isFavorite,  // Set the favorite status based on user’s favorite
+      },
+    };
+  
+}
    async getProductById(id: number): Promise<ResponseInterface<Product>> {
     const product = await this.getProduct(id)
     if (!product) {

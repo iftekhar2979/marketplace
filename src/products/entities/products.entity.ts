@@ -24,6 +24,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ProductImage } from './productImage.entity';
 import { ProductStatus } from '../enums/status.enum';
 import { User } from 'src/user/entities/user.entity';
+import { Favorite } from 'src/favourites/entities/favourite.entity';
 
 @Entity('products')
 export class Product {
@@ -130,4 +131,12 @@ export class Product {
   @ManyToOne(() => User, (user) => user.products, { eager: true })
 @JoinColumn({ name: 'user_id' })
 user: User; 
+@OneToMany(() => Favorite, (favorite) => favorite.product)
+  favorites: Favorite[];  
+}
+
+
+export class FavouriteProduct extends Product {
+  @ApiProperty({ example: true, description: 'Is the product marked as favorite by the current user' })
+  is_favorite: boolean;
 }

@@ -16,11 +16,12 @@ export enum OtpType {
   CHANGE_PHONE = 'change_phone',
   CUSTOM = 'custom'
 }
+
 @Entity({name:"otps"})
 export class Otp {
     @PrimaryGeneratedColumn('increment')
     @ApiProperty()
-    id: number;
+    id: number; 
 
     @Column({ type: 'varchar', length: 4})  // Store OTP as a string (typically 6 digits)
     @ApiProperty()

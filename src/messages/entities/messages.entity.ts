@@ -18,10 +18,16 @@ export class Messages {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'sender_id' })
   sender: User;
+ @ApiProperty({ example: '1', description: 'Offer Id' })
+  @Column({ nullable:true  })
+  offer_id: number;
 
   @ApiProperty({ example: 'Hello!', description: 'Message text' })
   @Column({ type: 'text', nullable: true })
   msg?: string;
+  @ApiProperty({ example: 'Text', description: 'Text | Image | Offer' })
+  @Column({ type: 'text', nullable: true })
+  type?: 'text'| 'offer' | 'image';
 
   @ApiProperty({ description: 'Conversation this message belongs to' })
   @ManyToOne(() => Conversations, (conversation) => conversation.messages, { onDelete: 'CASCADE' })

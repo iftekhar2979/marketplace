@@ -1,17 +1,17 @@
 import { ResponseInterface } from 'src/common/types/responseInterface';
 // import { Query, Query } from '@nestjs/common';
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { Product } from './entities/products.entity';
 import { CreateProductDto } from './dto/CreateProductDto.dto';
 import { GetFilesDestination, GetOptionalFilesDestination, GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'aws-sdk/clients/budgets';
 import { JwtAuthenticationGuard } from 'src/auth/guards/session-auth.guard';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/common/multer/multer.config';
 import { GetProductsQueryDto } from './dto/GetProductDto.dto';
 import { UpdateProductDto } from './dto/updatingProduct.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Controller('products')
 @ApiTags('Products')
@@ -56,6 +56,11 @@ constructor(private readonly productsService: ProductsService) {}
 @Query() query: GetProductsQueryDto,
   @GetUser() user: User,
   ) {
+    if(query.userId){
+      throw new ForbiddenException("Can't resolve the api")
+    }
+    query.userId = user.id
+    console.log(query)
     return this.productsService.findAllWithFilters(query);
   }
  @Put(':id')
@@ -86,7 +91,7 @@ constructor(private readonly productsService: ProductsService) {}
    @UseGuards(JwtAuthenticationGuard)
   @ApiResponse({ status: 200, description: 'Product updated successfully', type: Product })
 @ApiParam({ name: 'id', type: Number, description: 'ID of the read the product' })
-  async getProductById(@Param('id', ParseIntPipe) id: number): Promise<ResponseInterface<Product>> {
-    return this.productsService.getProductById(id);
+  async getProductById(@Param('id', ParseIntPipe) id: number,@GetUser() user:User): Promise<ResponseInterface<Product>> {
+    return this.productsService.getProductifFavourites(id,user.id);
   }
 }

@@ -165,7 +165,6 @@ const { password, passwordConfirm } = resetPasswordDto;
     if (!user) {
       throw new NotFoundException("User not found");   
     }
-    console.log(user)
     if (user.verification_type !== OtpType.FORGOT_PASSWORD) {
       throw new BadRequestException("Invalid verification type for password reset");
     }

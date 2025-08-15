@@ -12,6 +12,7 @@ import { ConversationsService } from "src/conversations/conversations.service";
 import { NotificationsService } from "src/notifications/notifications.service";
 import { NotificationAction, NotificationRelated } from "src/notifications/entities/notifications.entity";
 import { UserRoles } from "src/user/enums/role.enum";
+import { MessagesService } from "src/messages/messages.service";
 
 @Injectable()
 export class OfferService {
@@ -42,7 +43,7 @@ export class OfferService {
       price,
       status: OfferStatus.PENDING,
     });
-   const conversation = await this.coversationService.getOrCreate(product.id,[product.user_id , buyer_id])
+   const conversation = await this.coversationService.getOrCreate({productId:product.id,userIds:[product.user_id , buyer_id],offer:offer,offerType:OfferStatus.PENDING})
    console.log(conversation)
 await this.notificationService.createNotification({
   userId:product.user_id,
@@ -53,6 +54,7 @@ await this.notificationService.createNotification({
   isImportant:true,
   notificationFor:UserRoles.USER
 })
+
     return {message:"Offer sent Successfully!",status:'success',statusCode:201,data: await this.offerRepo.save(offer)}
   }
 
@@ -78,8 +80,69 @@ await this.notificationService.createNotification({
 
     offer.status = OfferStatus.ACCEPTED;
     await this.offerRepo.save(offer);
-
-    // Delegate to OrderService to create the order
+     const conversation = await this.coversationService.getOrCreate({productId:product.id,userIds:[product.user_id , offer.seller.id],offer:offer,offerType:OfferStatus.ACCEPTED})
+await this.notificationService.createNotification({
+  userId:offer.seller.id,
+  related:NotificationRelated.CONVERSATION,
+  action:NotificationAction.UPDATED,
+  msg:`Offer accepted for ${product.product_name} ! Feel Free to phurcase that . `,
+  targetId:conversation.id,
+  isImportant:true,
+  notificationFor:UserRoles.USER
+})
     return {message:"Offer accepted successfully",status:'success',statusCode:201,data: await this.orderService.createOrderFromOffer(offer)};
   }
+
+  async rejectOffer({ offerId, sellerId }: { offerId: number; sellerId: string }): Promise<ResponseInterface<Order>> {
+  // Find the offer by ID and load relations
+  const offer = await this.offerRepo.findOne({
+    where: { id: offerId },
+    relations: ['product', 'buyer', 'seller'],
+  });
+
+  // Check if the offer status is already rejected
+  if (offer.status === OfferStatus.REJECTED) {
+    throw new BadRequestException('Offer already rejected!');
+  }
+
+  // Check if the offer is accepted
+  if (offer.status === OfferStatus.ACCEPTED) {
+    throw new BadRequestException('Offer already accepted!');
+  }
+
+  // If offer is not found
+  if (!offer) {
+    throw new NotFoundException('Offer not found!');
+  }
+
+  // Check if the logged-in user is the seller of the product
+  const product = offer.product;
+  if (product.user_id !== sellerId) {
+    throw new ForbiddenException('You are not the owner of the product');
+  }
+
+  // Set the offer status to rejected
+  offer.status = OfferStatus.REJECTED;
+  const [savedOffer,conversation] = await Promise.all([this.offerRepo.save(offer),this.coversationService.getOrCreate({productId:product.id, userIds:[product.user_id, offer.seller.id],offer:offer,offerType:OfferStatus.REJECTED})])
+  await this.notificationService.createNotification({
+    userId: offer.seller.id,
+    related: NotificationRelated.CONVERSATION,
+    action: NotificationAction.UPDATED,
+    msg: `Your offer for ${product.product_name} has been rejected by the seller.`,
+    targetId: conversation.id,
+    isImportant: true,
+    notificationFor: UserRoles.USER,
+  });
+
+     
+
+ 
+  // Respond with success and order details
+  return {
+    message: 'Offer rejected successfully',
+    status: 'success',
+    statusCode: 200,
+    data: null,  // You can return null or additional data depending on the requirements
+  };
+}
 }

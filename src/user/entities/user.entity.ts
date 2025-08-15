@@ -11,6 +11,7 @@ import {
 } from "typeorm";
 import { UserRoles } from "../enums/role.enum";
 import { Product } from "src/products/entities/products.entity";
+import { Favorite } from "src/favourites/entities/favourite.entity";
 
 /**
  * It describes the schema for user table in database.
@@ -61,10 +62,10 @@ export class User {
   @Exclude({ toPlainOnly: true })
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true ,type:'varchar'})
   @Exclude({ toPlainOnly: true })
   address: string;
-  @Column({ nullable: true })
+  @Column({ nullable: true ,type:'varchar'})
   @Exclude({ toPlainOnly: true })
   phone: string;
 
@@ -79,9 +80,10 @@ export class User {
   })
   roles: UserRoles[]; // NOTE: You can change the size to assign multiple roles to a single user.
 
-  /** 
-   * timestamp for date of user creation.
-   */
+    @Column({ type: "boolean", default: false })
+    @ApiProperty({ default: false })
+    isActive: boolean;
+
   @CreateDateColumn()
   @ApiProperty()
   createdAt: Date;
@@ -102,5 +104,8 @@ export class User {
 
   @OneToMany(() => Product, (product) => product.user_id)
   products: Product[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.user)
+  favorites: Favorite[]; 
 
 }

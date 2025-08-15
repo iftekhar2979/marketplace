@@ -11,6 +11,7 @@ import { MessageAttachment } from 'src/attachment/entiies/attachments.entity';
 import { AttachmentService } from 'src/attachment/attachment.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { UserModule } from 'src/user/user.module';
+import { ParticipantsModule } from 'src/participants/participants.module';
 // import { ConversationsModule } from 'src/conversations/conversations.module';
 
 @Module({
@@ -20,6 +21,7 @@ AuthModule ,
 ConversationsModule,
 UserModule,
  AttachmentModule,
+ ParticipantsModule
 
   ],
   controllers: [MessagesController],

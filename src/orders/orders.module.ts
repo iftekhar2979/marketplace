@@ -6,12 +6,14 @@ import { Order } from './entities/order.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([Order,Offer]),
     AuthModule,
-    UserModule
+    UserModule,
+    NotificationsModule
   ],
   controllers: [OrdersController],
   providers: [OrdersService],
