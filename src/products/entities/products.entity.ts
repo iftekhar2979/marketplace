@@ -102,6 +102,7 @@ export class Product {
   @Column()
   condition: string;
 
+
   @ApiProperty({ example: 'M', description: 'Size of the product (if applicable)' })
   @IsString()
   @MinLength(1)

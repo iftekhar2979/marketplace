@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConversationParticipant } from './entities/participants.entity';
 import { EntityManager, In, Repository } from 'typeorm';
@@ -77,6 +77,52 @@ if(product_id){
         },
       },
     })}
+    async checkEligablity ({conversation_id,user_id}:{user_id:string,conversation_id:number}){
+      const participants = await this.getParticipants(conversation_id);
+    let sender = null;
+    let receiver = null;
+    let eligable = null
+
+    for (const participant of participants) {
+      if (participant.user.id === user_id) {
+        eligable = true
+      sender = participant.user
+      } else {
+      receiver = participant.user;
+      }
+    }
+    if(!eligable){
+      // throw new BadRequestException("You don't have access for this chat!")
+      return {sender:null,receiver:null}
+    }
+    return {sender ,receiver}
+    }
+
+    async findMyFriends(userId: string): Promise<User[]> {
+  // Query for the conversations the user is part of
+  const conversations = await this.participantRepo
+    .createQueryBuilder('participant')
+    .leftJoinAndSelect('participant.conversation', 'conversation')
+    .where('participant.user_id = :userId', { userId })
+    .getMany();
+    if (!conversations.length) {
+      throw new NotFoundException('No conversations found for this user');
+    }
+    
+    const userIdsInSameConversations = conversations.map((participant) => participant.conversation.id);
+    
+    const participantsInSameConversations = await this.participantRepo
+    .createQueryBuilder('participant')
+    .leftJoinAndSelect('participant.user', 'user')
+     .addSelect(['user.email', 'user.firstName', 'user.lastName','user.id'])
+    .where('participant.conversation_id IN (:...conversationIds)', { conversationIds: userIdsInSameConversations })
+    .andWhere('participant.user_id != :userId', { userId }) // Exclude the current user
+    .getMany();
+    
+  const friends = participantsInSameConversations.map(participant => participant.user);
+
+  return friends;
+}
 
   async muteParticipant(conversationId: number, userId: string) {
     const participant = await this.participantRepo.findOneOrFail({

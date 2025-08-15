@@ -25,7 +25,7 @@ export const GetFileDestination = createParamDecorator((data: unknown, ctx: Exec
   return file.path.split('/').slice(1,length).join('/');
 });
 function fileDestinations({images}:{images:Express.Multer.File[]}): string[] {
-  // console.log(images)
+  console.log(images)
 return images.map((file: Express.Multer.File) => {
 
     const length= file.path.split('/').length;

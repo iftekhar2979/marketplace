@@ -14,10 +14,6 @@ export class CreateProductDto {
   @IsString()
   phurcasing_price: string; // spelling as per your original
 
-  @ApiProperty({ description: 'Category ID', example: '123' })
-  @IsString()
-  category_id: string;
-
   @ApiProperty({ description: 'Quantity', example: '5' })
   @IsString()
   quantity: string;
@@ -40,9 +36,6 @@ export class CreateProductDto {
   @IsString()
   condition: string;
 
-  @ApiProperty({ description: 'Size ID', example: 'M' })
-  @IsString()
-  size_id: string;
 
   @ApiProperty({ description: 'Brand', example: 'Apple' })
   @IsString()

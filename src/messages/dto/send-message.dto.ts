@@ -1,13 +1,14 @@
 import { IsUUID, IsInt, IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AttachmentDto } from 'src/attachment/dto/attachments.dto';
+import { User } from 'src/user/entities/user.entity';
 
 export class SendMessageDto {
   @IsUUID()
-  senderId: string;
+  sender: User;
 
   @IsInt()
-  conversationId: number;
+  conversation_id: number;
 
   @IsOptional()
   @IsString()

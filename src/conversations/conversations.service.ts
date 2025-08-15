@@ -1,3 +1,4 @@
+
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Conversations } from './entities/conversations.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -12,6 +13,7 @@ import { pagination } from 'src/shared/utils/pagination';
 import { Messages } from 'src/messages/entities/messages.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
 import { OfferStatus } from 'src/offers/enums/offerStatus.enum';
+import { number } from 'joi';
 @Injectable()
 export class ConversationsService {
     constructor(
@@ -36,6 +38,23 @@ export class ConversationsService {
     });
     console.log(conversation)
 return await this.conversationRepo.save(conversation);
+
+  }
+  async updatedConversation({conversation_id,conversation,message}:{conversation_id:number,conversation?: Partial<Conversations>,message:Messages}){
+    const chat = await this.getConversationId(conversation_id)
+    if(message && conversation_id){
+      chat.lastmsg = message
+    }
+    if(conversation){
+      if(conversation.image){
+        chat.image = conversation.image
+      }
+      if(conversation.name){
+        chat.name= conversation.name
+      }
+
+    }
+return await this.conversationRepo.save(chat);
 
   }
   async offerStatusHandle({offer,existingConversation,offerType}:{offer:Offer,existingConversation:Conversations,offerType:OfferStatus}){
@@ -125,17 +144,19 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
 
         // Get total number of conversations
        const [conversations, total] = await this.conversationRepo.createQueryBuilder('conversation')
-  .leftJoinAndSelect('conversation.participants', 'participant')
-  .leftJoin('participant.user', 'user') // 👈 Do not auto-select full user
-  .addSelect([
-    'user.id',
-    'user.firstName',
-    'user.email',
-  ])
-  .where('user.id = :user_id', { user_id })
-  .skip(skip)
-  .take(take)
-  .getManyAndCount();
+        .leftJoinAndSelect('conversation.participants', 'participant',)
+        .leftJoin('participant.user', 'user') // 👈 Do not auto-select full user
+        .leftJoinAndSelect('conversation.lastmsg', 'lastmsg') 
+        .addSelect([
+          'user.id',
+          'user.firstName',
+          'user.email',
+          'user.isActive'
+        ])
+        .where('user.id = :user_id', { user_id })
+        .skip(skip)
+        .take(take)
+        .getManyAndCount();
 
           return {
             message: 'Conversations retrieved successfully',

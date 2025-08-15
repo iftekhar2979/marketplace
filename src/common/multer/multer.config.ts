@@ -34,11 +34,14 @@ export const multerConfig = {
       'video/mp4',
       'video/webm',
       'video/ogg',
+      'application/octet-stream'
+      
     ];
-
+console.log(file)
     if (allowedMimes.includes(file.mimetype)) {
       callback(null, true);
     } else {
+      
       callback(
         new Error(
           'Invalid file type. Only image, audio, and video files are allowed',

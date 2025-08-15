@@ -39,6 +39,10 @@ export class Conversations {
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
+  @ApiProperty({description:"Last Message"})
+  @OneToOne(()=> Messages ,{onDelete:'CASCADE'})
+  @JoinColumn({name:'lastmsg'})
+  lastmsg:Messages
   @ApiProperty({ type: () => [Messages], description: 'Messages in the conversation' })
   @OneToMany(() => Messages, (message) => message.conversation, { cascade: true })
   messages: Messages[];
