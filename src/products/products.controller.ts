@@ -1,6 +1,6 @@
 import { ResponseInterface } from 'src/common/types/responseInterface';
 // import { Query, Query } from '@nestjs/common';
-import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { Product } from './entities/products.entity';
@@ -12,6 +12,10 @@ import { multerConfig } from 'src/common/multer/multer.config';
 import { GetProductsQueryDto } from './dto/GetProductDto.dto';
 import { UpdateProductDto } from './dto/updatingProduct.dto';
 import { User } from 'src/user/entities/user.entity';
+import { Roles } from 'src/user/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles-auth.guard';
+import { ProductStatus } from './enums/status.enum';
+import { UserRoles } from 'src/user/enums/role.enum';
 
 @Controller('products')
 @ApiTags('Products')
@@ -83,15 +87,29 @@ constructor(private readonly productsService: ProductsService) {}
     @GetOptionalFilesDestination() filesDestination: string[],
   ) {
     updateProductDto.images = filesDestination;
-    console.log(updateProductDto,filesDestination)
     return this.productsService.updateProduct(id, updateProductDto,user.id);
   }
 
+  @Patch('/status/:id')
+   @UseGuards(JwtAuthenticationGuard,RolesGuard)
+   @Roles(UserRoles.ADMIN)
+@ApiResponse({ status: 200, description: 'Product updated successfully', type: Product })
+@ApiParam({ name: 'id', type: Number, description: 'ID of the read the product' })
+  async updateProductStatus(@Param('id', ParseIntPipe) id: number,@GetUser() user:User): Promise<ResponseInterface<Product>> {
+    return this.productsService.updateProductsStatus(id,ProductStatus.AVAILABLE);
+  }
   @Get(':id')
    @UseGuards(JwtAuthenticationGuard)
   @ApiResponse({ status: 200, description: 'Product updated successfully', type: Product })
 @ApiParam({ name: 'id', type: Number, description: 'ID of the read the product' })
   async getProductById(@Param('id', ParseIntPipe) id: number,@GetUser() user:User): Promise<ResponseInterface<Product>> {
     return this.productsService.getProductifFavourites(id,user.id);
+  }
+  @Delete(':id')
+   @UseGuards(JwtAuthenticationGuard)
+  @ApiResponse({ status: 200, description: 'Product updated successfully', type: Product })
+@ApiParam({ name: 'id', type: Number, description: 'ID of the read the product' })
+  async deleteProduct(@Param('id', ParseIntPipe) id: number,@GetUser() user:User) {
+    return this.productsService.getProductIdAndDelete(id,user.id);
   }
 }

@@ -55,20 +55,27 @@ if(status === ProductStatus.SOLD) {
       status,
     });
   }
-  async create(createProductDto: CreateProductDto, user:User) {
-    // Parse and validate numeric and boolean fields
+ async create(createProductDto: CreateProductDto, user: User) {
+    // Parse and validate numeric fields
     const sellingPrice = parseFloat(createProductDto.selling_price);
     const purchasingPrice = parseFloat(createProductDto.phurcasing_price); // keep original spelling if necessary
     const quantity = parseInt(createProductDto.quantity, 10);
+    const height = parseFloat(createProductDto.height);
+    const width = parseFloat(createProductDto.width);
+    const length = parseFloat(createProductDto.length);
+    const weight = parseFloat(createProductDto.weight);
+    // const postalCode = parseFloat(createProductDto.postal_code)
     const isNegotiable = createProductDto.is_negotiable.toLowerCase() === 'true';
+    const id_address_residential = createProductDto.is_address_residential.toLocaleLowerCase() === 'true'
 
-    if (isNaN(sellingPrice) || isNaN(purchasingPrice) || isNaN(quantity)) {
-      throw new BadRequestException('Invalid numeric values for price or quantity');
+    // Validate that numeric values are valid
+    if (isNaN(sellingPrice) || isNaN(purchasingPrice) || isNaN(quantity) || isNaN(height) || isNaN(width) || isNaN(length) || isNaN(weight)) {
+      throw new BadRequestException('Invalid numeric values for price, quantity, or dimensions');
     }
 
     // Prepare Product entity
     const product = new Product();
-    product.user_id = user.id  // convert userId to string
+    product.user_id = user.id; // Set userId
     product.product_name = createProductDto.product_name;
     product.selling_price = sellingPrice;
     product.purchasing_price = purchasingPrice;
@@ -79,9 +86,24 @@ if(status === ProductStatus.SOLD) {
     product.size = createProductDto.size;
     product.brand = createProductDto.brand;
     product.is_negotiable = isNegotiable;
-    product.status = ProductStatus.PENDING; // or whatever default
+    product.status = ProductStatus.PENDING; // Default status
+    product.height = height;
+    product.width = width;
+    product.length = length;
+    product.weight = weight;
+    product.city = createProductDto.city;
+    product.postal_code = createProductDto.postal_code;
+    product.country_id = parseInt(createProductDto.country_id, 10);
+    product.country_code = createProductDto.country_code;
+product.is_address_residential = id_address_residential ;
+product.address_line_1 = createProductDto.address_line_1,
+product.address_line_2 = createProductDto.address_line_2 
+product.country = createProductDto.country
 
-   const productInfo =await this.productRepository.save(product);
+
+    // Save the product
+    const productInfo = await this.productRepository.save(product);
+
     // Handle images if any
     if (createProductDto.images && Array.isArray(createProductDto.images)) {
       product.images = createProductDto.images.map((imgUrl: string) => {
@@ -89,21 +111,29 @@ if(status === ProductStatus.SOLD) {
         img.image = imgUrl; // assuming images are URLs; if files, handle accordingly
         img.product_id = product.id; // link image to product
         return img;
-    });
-  await this.productImageRepository.insert(product.images); 
+      });
+      await this.productImageRepository.insert(product.images); // Insert product images
     }
-    await this.notificationService.createNotification(
-      {userId:user.id,
-        related:NotificationRelated.PRODUCT,
-        msg:`${user.firstName} has listed a product for your review!`,
-        type:NotificationType.SUCCESS, 
-        targetId:product.id,
-        notificationFor:UserRoles.ADMIN ,
-        action:NotificationAction.CREATED,
-        isImportant: true})
 
-    return {message:"Product created successfully", data: await this.productRepository.save(product) ,statusCode:201};
-  }
+    // Create notification
+    await this.notificationService.createNotification({
+      userId: user.id,
+      related: NotificationRelated.PRODUCT,
+      msg: `${user.firstName} has listed a product for your review!`,
+      type: NotificationType.SUCCESS,
+      targetId: product.id,
+      notificationFor: UserRoles.ADMIN,
+      action: NotificationAction.CREATED,
+      isImportant: true,
+    });
+
+    return {
+      message: "Product created successfully",
+      data: productInfo,
+      statusCode: 201,
+    };
+}
+
   async findAll(
   page = 1,
   limit = 10,
@@ -243,6 +273,16 @@ await this.productRepository.save(product);
       
     });
   }
+
+    async updateProductsStatus(id: number, status:ProductStatus ): Promise<ResponseInterface<Product>> {
+      
+    const product = await this.productRepository.findOne({ where: { id ,status:ProductStatus.PENDING } });
+    if(!product){
+      throw new NotFoundException("Product not found!")
+    }
+    await this.productRepository.save(product)
+    return {message:"Product updated",statusCode:200,data: product,status:"success"}
+    }
    async getProductifFavourites(id: number, userId ?: string): Promise<any> {
      const product = await this.productRepository
       .createQueryBuilder('product')
@@ -273,6 +313,28 @@ delete product.favorites
     };
   
 }
+  async getProductIdAndDelete(product_id: number, userId?: string) {
+    const product = await this.productRepository.findOne({ where: { id: product_id, user_id: userId } });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    // Option 1: Soft delete (recommended if you have a status field)
+    product.status = ProductStatus.DELETED;
+    await this.productRepository.save(product);
+
+    // Option 2: Hard delete (uncomment if you want to remove from DB)
+    // await this.productRepository.delete({ id: product_id, user_id: userId });
+
+    return {
+      message: 'Product deleted successfully',
+      statusCode: 200,
+      data: {},
+    };
+  }
+  
+
    async getProductById(id: number): Promise<ResponseInterface<Product>> {
     const product = await this.getProduct(id)
     if (!product) {

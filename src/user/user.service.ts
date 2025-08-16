@@ -89,4 +89,14 @@ export class UserService {
     this.logger.log(`Image updated successfully`, UserService.name);
     return { message: "Image uploaded successfully", status: "success", data: null };
   }
+  async updateUserUpdatedTimeAndOfflineStatus({user_id,user}: {user_id: string, user?: Partial<User>}) {
+    this.logger.log(`Updating user Active Status`, UserService.name);
+    const updatedUser = await this.userRepository.update(user_id, { isActive:false});
+    
+    if (!updatedUser) {
+      throw new NotFoundException("User not found");
+    }
+
+    return updatedUser
+  }
 }

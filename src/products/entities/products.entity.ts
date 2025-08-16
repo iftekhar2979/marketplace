@@ -19,12 +19,16 @@ import {
   MaxLength,
   MinLength,
   IsArray,
+  Max,
+  IsNumberString,
+  IsBooleanString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductImage } from './productImage.entity';
 import { ProductStatus } from '../enums/status.enum';
 import { User } from 'src/user/entities/user.entity';
 import { Favorite } from 'src/favourites/entities/favourite.entity';
+import { number } from 'joi';
 
 @Entity('products')
 export class Product {
@@ -116,6 +120,81 @@ export class Product {
   @MaxLength(100)
   @Column()
   brand: string;
+
+   @ApiProperty({ example: '11', description: 'Height of the product parcel' })
+    @IsNumber()
+  @Min(1)
+  @Max(200)
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  height: number;
+
+  @ApiProperty({ example: '10', description: 'Width of the product (in cm)' })
+   @IsNumber()
+  @Min(1)
+  @Max(200)
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  width: number;
+
+  @ApiProperty({ example: '1', description: 'Length of the product (in cm)' })
+   @IsNumber()
+  @Min(1)
+  @Max(200)
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  length: number;
+
+  @ApiProperty({ example: '1', description: 'Weight of the product (in Kg)' })
+  @IsNumber()
+  @Min(1)
+  @Max(200)
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  weight: number;
+
+  @ApiProperty({ example: 'Dhaka', description: 'City of Location' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(20)
+  @Column('varchar', { nullable: true })
+  city: string;
+  @ApiProperty({ example: 'House-1,Dhaka', description: 'Address Line 1' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(20)
+  @Column('varchar', { nullable: true })
+  address_line_1: string;
+  @ApiProperty({ example: 'House-1,Road-5', description: 'Address Line 2' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(20)
+  @Column('varchar', { nullable: true })
+  address_line_2: string;
+  @ApiProperty({ example: 'House-1,Road-5', description: 'Address Line 2' })
+
+
+  @Column('bool', { nullable: true })
+  is_address_residential: boolean;
+
+  @ApiProperty({ example: '1212', description: 'Postal code' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(10)
+  @Column('varchar', { nullable: true })
+  postal_code: string;
+
+  @ApiProperty({ example: '112', description: 'County Id' })
+  @IsNumber()
+  @Min(1)
+  @Max(4)
+  @Column('int', { nullable: true })
+  country_id: number;
+
+  @ApiProperty({ example: 'US', description: 'County Code' })
+  @Column('varchar', { nullable: true })
+  country_code: string;
+
+  @ApiProperty({ example: 'Bangladesh', description: 'County' })
+  @IsString()
+  @Column('varchar', { nullable: true })
+  country: string;
 
   @ApiProperty({ example: true, description: 'Whether the price is negotiable' })
   @IsBoolean()

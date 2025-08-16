@@ -37,12 +37,7 @@ export class JwtAuthenticationGuard {
       if (user.deletedAt) {
         throw new Error('User is Not Available!');
       }
-     
-          // if (!user.isEmailVerified) {
-          //   throw new Error(
-          //     'Your Account is not verified!',
-          //   );
-          // }
+
       request.user = payload; // Attach user data to the request
       request.userInfo=user
       return true;

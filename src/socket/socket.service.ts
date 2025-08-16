@@ -104,6 +104,15 @@ export class SocketService {
       socket.on('seen', (data:{receiver_id:string,conversation_id:number}) => {
         this.handleMessageSeen(payload.id, data.receiver_id,data.conversation_id);
       });
+      socket.on("disconnect",async ()=>{
+        await this.userService.updateUserUpdatedTimeAndOfflineStatus({user_id:payload.id})
+    socket.broadcast.emit(`active-users`, {
+          message: `${payload.firstName} is offline .`,
+          isActive: false,
+          id: payload.id,
+        });
+
+      })
     //   socket.on('call-end', (data) => {
     //     this.handleCallEnd(payload, data, socket);
     //   });
@@ -126,7 +135,8 @@ export class SocketService {
       socket.disconnect(); // Disconnect the socket if an error occurs
     }
   }
-  handleDisconnection(socket: Socket, userId: string): void {
+  async handleDisconnection(socket: Socket, userId: string) {
+    
     console.log('Disconnected', socket);
     this.connectedClients.delete(socket.id);
     this.connectedUsers.delete(userId);
@@ -134,6 +144,7 @@ export class SocketService {
 
    async userActiveStatus(id: string, socket:Socket) {
     let friendsInfo = (await this.participantService.findMyFriends(id)) || [];
+    console.log("USER CONNECTION",friendsInfo)
     friendsInfo.forEach((friend: User) => {
       if (this.connectedUsers.get(friend.id)) {
         socket.emit('active-users', {
