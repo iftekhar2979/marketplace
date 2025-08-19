@@ -49,6 +49,7 @@ export class JwtAuthenticationGuard {
 
   private extractTokenFromHeader(request: any): string | null {
     const bearerToken = request.headers['authorization'];
+    console.log("Bearer Token :", bearerToken);
     if (bearerToken && bearerToken.startsWith('Bearer ')) {
       return bearerToken.split(' ')[1];
     }

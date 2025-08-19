@@ -33,9 +33,9 @@ export class GetProductsQueryDto {
 
   @ApiPropertyOptional({ description: 'Price range in format min-max', example: '100-300' })
   @IsOptional()
-  @Matches(/^\d+-\d+$/, {
-    message: 'Price must be in format "min-max", e.g., "10-50"',
-  })
+  // @Matches(/^\d+-\d+$/, {
+  //   message: 'Price must be in format "min-max", e.g., "10-50"',
+  // })
   price?: string;
 
   @ApiPropertyOptional({ description: 'Page number for pagination', example: 1 })

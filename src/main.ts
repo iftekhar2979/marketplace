@@ -37,7 +37,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     cors: true,
     bodyParser: true,
-    logger: ["error", "fatal", "log", "verbose", "warn", "debug"],
+    logger: ["error", "fatal", "log", "verbose", "warn", "debug",]
   });
   const configService = app.get<ConfigService>(ConfigService);
   // const expressApp = app.getHttpAdapter() as unknown as express.Application;

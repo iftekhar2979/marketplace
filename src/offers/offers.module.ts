@@ -11,6 +11,8 @@ import { UserModule } from 'src/user/user.module';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { MessagesModule } from 'src/messages/messages.module';
+import { SocketModule } from 'src/socket/socket.module';
+import { SocketService } from 'src/socket/socket.service';
 
 @Module({
   imports: [

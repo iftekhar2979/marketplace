@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Messages } from './entities/messages.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,6 +12,7 @@ import { Pagination, pagination } from 'src/shared/utils/pagination';
 import { ResponseInterface } from 'src/common/types/responseInterface';
 import { InjectLogger } from 'src/shared/decorators/logger.decorator';
 import { Logger } from 'winston';
+import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
 export class MessagesService {
@@ -22,6 +23,7 @@ export class MessagesService {
     private readonly conversationService:ConversationsService,
     private readonly userService: UserService,
     private readonly attachmentService: AttachmentService,
+ private readonly socketService:SocketService,
     @InjectLogger() private readonly logger: Logger
   ) {}
 
@@ -30,6 +32,7 @@ export class MessagesService {
       const conversation = await this.conversationService.getConversationId(dto.conversation_id);
       const message = this.messageRepo.create({
         msg: dto.msg,
+        type:dto.type ? dto.type : 'text',
         sender:dto.sender,
         conversation,
         isRead:false
@@ -40,8 +43,9 @@ export class MessagesService {
       
       if (dto.attachments?.length) {
         await this.attachmentService.addAttachments(savedMessage, dto.attachments);
+        return this.messageRepo.findOneOrFail({where:{id:savedMessage.id},relations:["attachments"]})
       }
-      
+
       return savedMessage
     }catch(error){
       console.log(error)
@@ -61,7 +65,45 @@ export class MessagesService {
   
   };
 }
+ async sendFileAsMessageWithRest(
+   {conversation_id,user,file,receiver}:{
+    conversation_id: number,
+    receiver: User,
+    user:User,
+    file: Express.Multer.File[]}
+  ) {
+      // console.log(this.socketService.connectedUsers);
+      if (file.length < 1) {
+        throw new BadRequestException('Please select a file to send');
+      }
+      // console.log(file);
+      const images = file.map((singleFile) => {
+        return {
+          file_url: `${singleFile.destination.slice(7, singleFile.destination.length)}/${singleFile.filename}`,
+          type: singleFile.mimetype,
+        };
+      });
+      let msgType: 'image' | 'video' =
+        images[0].type.includes('image') ||
+        images[0].type.includes('octet-stream')
+          ? 'image'
+          : 'video';
 
+     const msg= await this.sendMessage({conversation_id,sender:user,attachments:images,type:msgType})
+    //  console.log("first")
+      await this.conversationService.updatedConversation({conversation_id,message:msg})
+      let receiverSocket = this.socketService.getSocketByUserId(receiver.id);
+    // console.log(this.socketService)
+    let senderSocket = this.socketService.getSocketByUserId(user.id);
+      if(receiverSocket){
+        receiverSocket.emit(`conversation-${conversation_id}`,msg)
+      }
+      if(senderSocket){
+        senderSocket.emit(`conversation-${conversation_id}`,msg)
+      }
+      return msg
+    
+  }
    async getMessages({
     conversationId,
     receiver,
@@ -71,7 +113,7 @@ export class MessagesService {
     // Calculate skip and take based on page and limit
     const skip = (page - 1) * limit;
     const take = limit;
-
+// this.socketService.joinRoom({roomkey:`conversation-${conversationId}`})
     // Query to get the messages with the required relations
     const [messages, total] = await this.messageRepo.findAndCount({
       where: { conversation: { id: conversationId } },

@@ -15,6 +15,10 @@ export class SendMessageDto {
   msg?: string;
 
   @IsOptional()
+  @IsString()
+  type?: 'text' | 'image' | 'video' | 'offer';
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AttachmentDto)

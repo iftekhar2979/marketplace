@@ -1,3 +1,4 @@
+
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConversationParticipant } from './entities/participants.entity';
@@ -64,9 +65,9 @@ if(product_id){
 
 
  async getParticipants(conversationId: number): Promise<ConversationParticipant[]> {
-    return this.participantRepo.find({
+    return await this.participantRepo.find({
       where: { conversation: { id: conversationId } },
-      relations: ['user'],  // We are joining the user relation
+      relations: ['user','conversation'],  // We are joining the user relation
       select: {
         user: {
           firstName: true,
@@ -77,11 +78,12 @@ if(product_id){
         },
       },
     })}
-    async checkEligablity ({conversation_id,user_id}:{user_id:string,conversation_id:number}){
+    async checkEligablity ({conversation_id,user_id}:{user_id:string,conversation_id:number}):Promise<{sender:null| User ,receiver:null | User , conversation: null | Conversations}>{
       const participants = await this.getParticipants(conversation_id);
     let sender = null;
     let receiver = null;
     let eligable = null
+    let conversation = null
 
     for (const participant of participants) {
       if (participant.user.id === user_id) {
@@ -90,12 +92,13 @@ if(product_id){
       } else {
       receiver = participant.user;
       }
+      conversation = participant.conversation
     }
     if(!eligable){
       // throw new BadRequestException("You don't have access for this chat!")
-      return {sender:null,receiver:null}
+      return {sender:null,receiver:null,conversation:null}
     }
-    return {sender ,receiver}
+    return {sender ,receiver,conversation}
     }
 
     async findMyFriends(userId: string): Promise<User[]> {

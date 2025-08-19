@@ -1,11 +1,14 @@
+import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { BadRequestException, Inject, Injectable, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Server } from 'http';
 import { send } from 'process';
 // import mongoose, { Model, ObjectId } from 'mongoose';
 import { Socket } from 'socket.io';
 import { ConversationsService } from 'src/conversations/conversations.service';
+import { Messages } from 'src/messages/entities/messages.entity';
 import { MessagesService } from 'src/messages/messages.service';
 import { ParticipantsModule } from 'src/participants/participants.module';
 import { ParticipantsService } from 'src/participants/participants.service';
@@ -13,6 +16,7 @@ import { InjectLogger } from 'src/shared/decorators/logger.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
 import { Logger } from 'winston';
+import { Conversations } from 'src/conversations/entities/conversations.entity';
 // import {
 //   CreateCallEndWithSocket,
 //   CreateMessageDtoWithSocket,
@@ -39,8 +43,10 @@ export class SocketService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private readonly conversationService:ConversationsService,
-    private readonly messageService:MessagesService,
+    // private readonly conversationService:ConversationsService,
+    // private readonly messageService:MessagesService,
+    @InjectRepository(Messages) private readonly messageRepository:Repository<Messages>,
+    @InjectRepository(Conversations) private readonly conversationRepository:Repository<Conversations>,
     private readonly participantService: ParticipantsService,
     @InjectLogger() private readonly logger: Logger
     // @InjectRe(Message.name) private readonly messageModel: Model<Message>,
@@ -104,6 +110,7 @@ export class SocketService {
       socket.on('seen', (data:{receiver_id:string,conversation_id:number}) => {
         this.handleMessageSeen(payload.id, data.receiver_id,data.conversation_id);
       });
+       console.log(this.connectedUsers)
       socket.on("disconnect",async ()=>{
         await this.userService.updateUserUpdatedTimeAndOfflineStatus({user_id:payload.id})
     socket.broadcast.emit(`active-users`, {
@@ -156,8 +163,31 @@ export class SocketService {
     });
   }
   getSocketByUserId(userId: string): Socket | undefined {
+    console.log(this.connectedUsers)
     const socketID = this.connectedUsers.get(userId)?.socketID;
     return socketID ? this.connectedClients.get(socketID) : undefined;
+  }
+   joinRoom ({roomkey}:{roomkey:string}){
+    try{
+        this.io.join(roomkey)
+    }catch(error){
+        console.log(error)
+    }
+  }
+  sendToRoom(roomkey:string,event:string, value:any){
+    this.io.to(roomkey).emit(event,value)
+  }
+  async handleMessageDelivery({senderId,receiverId,conversation_id,message}:{senderId:string,receiverId:string,conversation_id:number,message:Messages}){
+
+      const receiverSocket = this.getSocketByUserId(receiverId);
+      const senderSocket = this.getSocketByUserId(senderId);
+     if(receiverSocket){
+                receiverSocket.emit(`conversation-${conversation_id}`,message)
+            }
+            if(senderSocket){
+
+                senderSocket.emit(`conversation-${conversation_id}`,message);
+            }
   }
 
   async handleSendMessage(
@@ -170,27 +200,22 @@ export class SocketService {
         throw new Error('Invalid message data!');
       }
     const conversation_id = data.conversation_id
-const {sender,receiver}= await this.participantService.checkEligablity({conversation_id,user_id:payload.id})
+const {sender,receiver,conversation}= await this.participantService.checkEligablity({conversation_id,user_id:payload.id})
 if(!sender && !receiver){
 throw new BadRequestException("You are not eligable for this chat .")
 }
-  this.logger.log("Sender Receiver",sender,receiver)
-
-      const receiverSocket = this.getSocketByUserId(receiver.id);
-      const senderSocket = this.getSocketByUserId(sender.id);
-      console.log("payload",payload)
       if (payload.id === receiver.id) {
         this.getSocketByUserId(sender.id).emit(
           `error`,
           'Message Delivered Failed!! Because Sender and Receiver are same',
         );
       }
-            const message = await this.messageService.sendMessage({sender:sender, conversation_id:conversation_id,msg:data.msg})
-            if(receiverSocket){
-                receiverSocket.emit(`conversation-${data.conversation_id}`,message)
-            }
-            senderSocket.emit(`conversation-${data.conversation_id}`,message);
-            await this.conversationService.updatedConversation({conversation_id,message})
+            const message = this.messageRepository.create({sender,msg:data.msg,type:'text',conversation,isRead:false})
+       this.handleMessageDelivery({senderId:sender.id,receiverId:receiver.id,conversation_id:conversation.id,message})
+            await this.messageRepository.save(message)
+            conversation.lastmsg = message
+            await this.conversationRepository.save(conversation)
+
     } catch (error) {
         // console.log(error)
       console.error('Error handling send-message:', error.message);
@@ -210,7 +235,14 @@ throw new BadRequestException("You are not eligable for this chat .")
   }
   async handleMessageSeen(sender_id: string,receiver_id:string, conversation_id: number) {
     try {
-      let lastMessage = await this.messageService.seenMessages({conversation_id})
+    //   let lastMessage = await this.messageService.seenMessages({conversation_id})
+  const lastMessage=  await this.messageRepository
+    .createQueryBuilder()
+    .update(Messages)
+    .set({ isRead: true })
+    .where('conversation_id = :conversation_id', { conversation_id })
+    .andWhere('isRead = false')
+    .execute();
       this.activeSocket(
         sender_id,
         `seen-${conversation_id}`,

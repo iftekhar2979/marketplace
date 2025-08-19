@@ -13,9 +13,10 @@ export class MessageEligabilityGuard {
     if (!request.user) {
       throw new UnauthorizedException('Unauthorized user!');
     }
-
+console.log(params.id)
     const user = request.user;
     const participants = await this.participantService.getParticipants(params.id);
+    console.log(participants)
     let eligable = false;
     let receiver = null;
 

@@ -125,47 +125,47 @@ export class Product {
     @IsNumber()
   @Min(1)
   @Max(200)
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  @Column('decimal', { precision: 10, scale: 2})
   height: number;
 
   @ApiProperty({ example: '10', description: 'Width of the product (in cm)' })
    @IsNumber()
   @Min(1)
   @Max(200)
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  @Column('decimal', { precision: 10, scale: 2})
   width: number;
 
   @ApiProperty({ example: '1', description: 'Length of the product (in cm)' })
    @IsNumber()
   @Min(1)
   @Max(200)
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  @Column('decimal', { precision: 10, scale: 2})
   length: number;
 
   @ApiProperty({ example: '1', description: 'Weight of the product (in Kg)' })
   @IsNumber()
   @Min(1)
   @Max(200)
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  @Column('decimal', { precision: 10, scale: 2 })
   weight: number;
 
   @ApiProperty({ example: 'Dhaka', description: 'City of Location' })
   @IsString()
   @MinLength(2)
   @MaxLength(20)
-  @Column('varchar', { nullable: true })
+  @Column('varchar')
   city: string;
   @ApiProperty({ example: 'House-1,Dhaka', description: 'Address Line 1' })
   @IsString()
   @MinLength(2)
   @MaxLength(20)
-  @Column('varchar', { nullable: true })
+  @Column('varchar')
   address_line_1: string;
   @ApiProperty({ example: 'House-1,Road-5', description: 'Address Line 2' })
   @IsString()
   @MinLength(2)
   @MaxLength(20)
-  @Column('varchar', { nullable: true })
+  @Column('varchar')
   address_line_2: string;
   @ApiProperty({ example: 'House-1,Road-5', description: 'Address Line 2' })
 

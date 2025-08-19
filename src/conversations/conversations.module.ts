@@ -9,6 +9,8 @@ import { ProductsModule } from 'src/products/products.module';
 import { UserModule } from 'src/user/user.module';
 import { MessagesModule } from 'src/messages/messages.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { SocketModule } from 'src/socket/socket.module';
+// import { SocketService } from 'src/socket/socket.service';
 
 @Module({
   imports:[
@@ -16,8 +18,8 @@ TypeOrmModule.forFeature([Conversations,Messages]),
 ParticipantsModule ,
 ProductsModule ,
 UserModule ,
-AuthModule
-
+AuthModule,
+SocketModule
   ],
   providers: [ConversationsService],
   controllers: [ConversationsController],

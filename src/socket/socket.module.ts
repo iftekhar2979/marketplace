@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 import { SocketService } from './socket.service';
 import { SocketController } from './socket.controller';
 import { AuthModule } from 'src/auth/auth.module';
@@ -10,10 +10,15 @@ import { SocketGateway } from './socket.gateway';
 import { MessagesModule } from 'src/messages/messages.module';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { ParticipantsModule } from 'src/participants/participants.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Messages } from 'src/messages/entities/messages.entity';
+import { Conversations } from 'src/conversations/entities/conversations.entity';
 
 
+@Global()
 @Module({
   imports:[
+    TypeOrmModule.forFeature([Messages ,Conversations]),
     AuthModule,
     UserModule,
      PassportModule.register({ defaultStrategy: "jwt" }),
@@ -29,12 +34,13 @@ import { ParticipantsModule } from 'src/participants/participants.module';
             };
           },
         }),
-
-        MessagesModule,
-        ConversationsModule,
+  //  forwardRef(() => MessagesModule), 
+        // MessagesModule,
+        // ConversationsModule,
         ParticipantsModule
   ], 
   providers: [SocketGateway, SocketService], 
-  controllers: [SocketController]
+  controllers: [SocketController],
+  exports:[SocketGateway,SocketService]
 })
 export class SocketModule {}

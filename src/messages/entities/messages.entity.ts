@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { User } from 'src/user/entities/user.entity';
 import { Conversations } from 'src/conversations/entities/conversations.entity';
 import { MessageAttachment } from 'src/attachment/entiies/attachments.entity';
+import { Offer } from 'src/offers/entities/offer.entity';
  // Make sure this path is correct
 
 @Entity('messages')
@@ -27,7 +28,7 @@ export class Messages {
   msg?: string;
   @ApiProperty({ example: 'Text', description: 'Text | Image | Offer' })
   @Column({ type: 'text', nullable: true })
-  type?: 'text'| 'offer' | 'image';
+  type?: 'text'| 'offer' | 'image' |'video';
 
   @ApiProperty({ description: 'Conversation this message belongs to' })
   @ManyToOne(() => Conversations, (conversation) => conversation.messages, { onDelete: 'CASCADE' })
@@ -42,6 +43,9 @@ export class Messages {
   @Column()
   isRead: Boolean;
 
+ @ManyToOne(()=>Offer)
+ @JoinColumn({name:'offer_id'})
+ offer: Offer
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: Date;
 

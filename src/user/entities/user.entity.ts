@@ -13,6 +13,11 @@ import { UserRoles } from "../enums/role.enum";
 import { Product } from "src/products/entities/products.entity";
 import { Favorite } from "src/favourites/entities/favourite.entity";
 
+
+export enum USERSTATUS {
+VERIFIED = 'verified',
+NOT_VERIFIED = 'not_verified'
+}
 /**
  * It describes the schema for user table in database.
  */
@@ -55,6 +60,12 @@ export class User {
   @Column({ type: "varchar",  nullable: true })
   @ApiProperty()
   image: string;
+  @Column({ type: "varchar",  nullable: true ,default:'not_verified'})
+  @ApiProperty()
+  status: USERSTATUS.NOT_VERIFIED;
+  @Column({ type: "int",  nullable: true })
+  @ApiProperty()
+  rating: 0;
   /**
    * hashed password of user.
    */

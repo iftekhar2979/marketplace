@@ -65,6 +65,6 @@ order_id: number;
   @ApiProperty({ description: 'Timestamp when the offer was last updated' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
-
+;
 
 }

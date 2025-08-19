@@ -1,5 +1,5 @@
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Conversations } from './entities/conversations.entity';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +14,7 @@ import { Messages } from 'src/messages/entities/messages.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
 import { OfferStatus } from 'src/offers/enums/offerStatus.enum';
 import { number } from 'joi';
+import { SocketService } from 'src/socket/socket.service';
 @Injectable()
 export class ConversationsService {
     constructor(
@@ -24,6 +25,7 @@ export class ConversationsService {
     private readonly productService: ProductsService,
     private readonly userService:UserService,
      private readonly dataSource: DataSource, 
+     private readonly socketService:SocketService
   ) {}
 
   async getConversationId(conversationId:number){
@@ -42,6 +44,9 @@ return await this.conversationRepo.save(conversation);
   }
   async updatedConversation({conversation_id,conversation,message}:{conversation_id:number,conversation?: Partial<Conversations>,message:Messages}){
     const chat = await this.getConversationId(conversation_id)
+    if(!chat){
+      throw new NotFoundException("Conversation not found")
+    }
     if(message && conversation_id){
       chat.lastmsg = message
     }
@@ -52,14 +57,18 @@ return await this.conversationRepo.save(conversation);
       if(conversation.name){
         chat.name= conversation.name
       }
+      if(conversation.lastmsg){
+        chat.lastmsg = conversation.lastmsg
+      }
 
     }
+    console.log("Is the conversation",conversation)
 return await this.conversationRepo.save(chat);
 
   }
   async offerStatusHandle({offer,existingConversation,offerType}:{offer:Offer,existingConversation:Conversations,offerType:OfferStatus}){
 if(offerType === OfferStatus.PENDING){
-      await this.messageRepo.insert({
+     const msg = this.messageRepo.create({
         sender_id: offer.buyer_id,
         isRead: false,
         msg: `Current Price : ${existingConversation.product.selling_price} \n Offer Price : ${offer.price}`,
@@ -67,9 +76,10 @@ if(offerType === OfferStatus.PENDING){
         type: 'offer',
         conversation: existingConversation
       });
-
+      await this.messageRepo.save(msg)
+this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }else if(offerType === OfferStatus.ACCEPTED){
-await this.messageRepo.insert({
+const msg= this.messageRepo.create({
         sender_id: offer.seller_id,
         isRead: false,
         msg: `Offer Price : ${offer.price} is accepted`,
@@ -77,8 +87,10 @@ await this.messageRepo.insert({
         type: 'offer',
         conversation: existingConversation
       });
+      await this.messageRepo.save(msg)
+      this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }else{
-      await this.messageRepo.insert({
+    const msg = this.messageRepo.create({
         sender_id: offer.seller_id,
         isRead: false,
         msg: `Sorry , Offer Price : ${offer.price} is rejected .`,
@@ -86,21 +98,24 @@ await this.messageRepo.insert({
         type: 'offer',
         conversation: existingConversation
       });
+        await this.messageRepo.save(msg)
+      this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }
   }
+  
 async getOrCreate({productId, userIds, offer,offerType}:{productId: number, userIds: string[], offer: Offer,offerType:OfferStatus}): Promise<Conversations> {
   const existing = await this.participantService.checkChatAlreadyExist({
     product_id: productId,
     user_ids: userIds
   });
-
+  console.log(existing)
   // Case: Conversation already exists
-  if (existing.length === 2) {
+  if (existing.length > 1) {
     const existingConversation = await this.conversationRepo.findOne({
       where: { product: { id: productId } },
       relations: ['participants', 'product']
     });
-    
+    // console.log(existingConversation)
 await this.offerStatusHandle({offer,existingConversation,offerType})
     return existingConversation;
   }
@@ -119,50 +134,75 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
     // Create conversation using transactional entity manager
     const savedConversation = await manager.save(Conversations, {
       product,
-      participants: [],
+      name: `${product.product_name} (${users.map(u => u.firstName).join(' - ')})`,
+      image: product.images[0]?.image || null,
+      lastmsg: null, 
     });
 
     // Add participants
     await this.participantService.addMultiple(savedConversation, users, product, manager);
 
+  
     // Save message
-    await manager.insert(Messages, {
+   const msg = await manager.create(Messages, {
       sender_id: offer.buyer_id,
       isRead: false,
       msg: `Current Price : ${product.selling_price} \n Offer Price : ${offer.price}`,
       type: 'offer',
+      offer_id:offer.id,
+      offer:offer,
       conversation: savedConversation
     });
+    console.log(msg)
+    savedConversation.lastmsg = msg
+    await manager.save(msg)
+   await manager.save(Conversations,savedConversation);
+  // await this.updatedConversation({conversation_id:savedConversation.id , message:msg ,conversation:{lastmsg:msg}})
+    this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:savedConversation.id,message:msg})
 
     return savedConversation;
   });
 }
-   async getAllConversations(user_id:string,page: number, limit: number) {
-        // Calculate the skip and take for pagination
-        const skip = (page - 1) * limit;
-        const take = limit;
+  async getAllConversations(user_id: string, page: number, limit: number) {
+  try {
+    // Calculate skip and take for pagination
+    const skip = (page - 1) * limit;
+    const take = limit;
 
-        // Get total number of conversations
-       const [conversations, total] = await this.conversationRepo.createQueryBuilder('conversation')
-        .leftJoinAndSelect('conversation.participants', 'participant',)
-        .leftJoin('participant.user', 'user') // 👈 Do not auto-select full user
-        .leftJoinAndSelect('conversation.lastmsg', 'lastmsg') 
-        .addSelect([
-          'user.id',
-          'user.firstName',
-          'user.email',
-          'user.isActive'
-        ])
-        .where('user.id = :user_id', { user_id })
-        .skip(skip)
-        .take(take)
-        .getManyAndCount();
+    // Fetch conversations with necessary relations and apply pagination
+    const [conversations, total] = await this.conversationRepo
+      .createQueryBuilder('conversation')
+      .leftJoinAndSelect('conversation.participants', 'participant')
+      .leftJoin('participant.user', 'user')  // Join with user but don't auto-select full user
+      .leftJoinAndSelect('conversation.lastmsg', 'lastmsg') // Join with last message
+      .addSelect([
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.image',
+        'user.email',
+        'user.isActive',
+      ])  // Only select necessary fields from user
+      .where('user.id != :user_id', { user_id }) // Filter conversations where user.id is not equal to provided user_id
+      .skip(skip) // Apply pagination
+      .take(take)
+      .getManyAndCount();
 
-          return {
-            message: 'Conversations retrieved successfully',
-            statusCode: 200,
-            data: conversations,
-            pagination: pagination({page ,limit,total})
-        };
-    }
+    // Process the conversations to include only other participants (exclude logged-in user)
+   
+    // Prepare the response object
+    const response = {
+      message: 'Conversations retrieved successfully',
+      statusCode: 200,
+      data: conversations,  // Include the filtered conversations
+      pagination: pagination({ page, limit, total }),  // Ensure pagination details
+    };
+
+    return response;
+  } catch (error) {
+    // Handle any unexpected errors and provide a descriptive message
+    console.error('Error fetching conversations:', error);
+    throw new Error('Unable to retrieve conversations at this time.');
+  }
+}
 }
