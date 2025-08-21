@@ -73,10 +73,12 @@ if(offerType === OfferStatus.PENDING){
         isRead: false,
         msg: `Current Price : ${existingConversation.product.selling_price} \n Offer Price : ${offer.price}`,
         offer_id: offer.id,
+        offer:offer,
         type: 'offer',
         conversation: existingConversation
       });
       await this.messageRepo.save(msg)
+      console.log(msg)
 this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }else if(offerType === OfferStatus.ACCEPTED){
 const msg= this.messageRepo.create({
@@ -84,10 +86,12 @@ const msg= this.messageRepo.create({
         isRead: false,
         msg: `Offer Price : ${offer.price} is accepted`,
         offer_id: offer.id,
+        offer:offer,
         type: 'offer',
         conversation: existingConversation
       });
       await this.messageRepo.save(msg)
+      console.log(msg)
       this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }else{
     const msg = this.messageRepo.create({
@@ -95,6 +99,7 @@ const msg= this.messageRepo.create({
         isRead: false,
         msg: `Sorry , Offer Price : ${offer.price} is rejected .`,
         offer_id: offer.id,
+        offer:offer,
         type: 'offer',
         conversation: existingConversation
       });
@@ -108,7 +113,7 @@ async getOrCreate({productId, userIds, offer,offerType}:{productId: number, user
     product_id: productId,
     user_ids: userIds
   });
-  console.log(existing)
+  // console.log(existing)
   // Case: Conversation already exists
   if (existing.length > 1) {
     const existingConversation = await this.conversationRepo.findOne({
@@ -153,9 +158,9 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
       offer:offer,
       conversation: savedConversation
     });
-    console.log(msg)
     savedConversation.lastmsg = msg
     await manager.save(msg)
+    console.log(msg)
    await manager.save(Conversations,savedConversation);
   // await this.updatedConversation({conversation_id:savedConversation.id , message:msg ,conversation:{lastmsg:msg}})
     this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:savedConversation.id,message:msg})
@@ -183,7 +188,7 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
         'user.email',
         'user.isActive',
       ])  // Only select necessary fields from user
-      .where('user.id != :user_id', { user_id }) // Filter conversations where user.id is not equal to provided user_id
+      .where('user.id = :user_id', { user_id }) // Filter conversations where user.id is not equal to provided user_id
       .skip(skip) // Apply pagination
       .take(take)
       .getManyAndCount();

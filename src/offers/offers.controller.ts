@@ -22,7 +22,6 @@ export class OffersController {
         @GetUser() user : User ,
       ) {
         const {product_id,price}=offer
-        console.log(offer)
         return this.offerService.createOffer({buyer_id:user.id,product_id,price})
       }
     @Post(':id/accept')

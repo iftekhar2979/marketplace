@@ -2,11 +2,12 @@ import { BadRequestException, Body, Controller, Get, Param, Post, Query, Uploade
 import { MessagesService } from './messages.service';
 import { JwtAuthenticationGuard } from 'src/auth/guards/session-auth.guard';
 import { MessageEligabilityGuard } from './decorators/message-eligability.guard';
-import { GetReceiver, GetUser } from 'src/auth/decorators/get-user.decorator';
+import { GetConversation, GetReceiver, GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/common/multer/multer.config';
 import { SocketService } from 'src/socket/socket.service';
+import { Conversations } from 'src/conversations/entities/conversations.entity';
 
 @Controller('messages')
 export class MessagesController {
@@ -17,18 +18,17 @@ export class MessagesController {
 
     @Get(':id')
     @UseGuards(JwtAuthenticationGuard, MessageEligabilityGuard)
-     
   async getMessages(
     @GetReceiver() receiver:User,
-    @Param('id') conversationId: number,  // conversationId is required
-    @Query('page') page: number = 1,  // Default to page 1
-    @Query('limit') limit: number = 10,  // Default to limit 10
-       
-        // @GetFilesDestination() filesDestination: string[],
+    @GetConversation() conversation:Conversations,
+    @Param('id') conversationId: number, 
+    @Query('page') page: number = 1,  
+    @Query('limit') limit: number = 10,  
   ) {
     const response = await this.messagesService.getMessages({
       conversationId,
       receiver,
+      conversation,
       page,
       limit,
     });

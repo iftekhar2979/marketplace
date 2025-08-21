@@ -18,20 +18,20 @@ export class Transections {
          @Column()
          order_id: number;
       @ApiProperty({ example: 'wallet Id of user', description: ' Wallet Id' })
-         @Column()
-         wallet_id: number; 
-        @ApiProperty({ example: 99.99, description: 'Amount ' })
-         @Column('decimal', { precision: 10, scale: 2 })
-        amount: number;
+      @Column()
+      wallet_id: number; 
+      @ApiProperty({ example: 99.99, description: 'Amount ' })
+      @Column('decimal', { precision: 10, scale: 2 })
+      amount: number;
       @ApiProperty({ example: 'Transection id', description: ' Transection Id Of Payments' })
-         @Column()
-         transectionId:string;
+      @Column()
+      transectionId:string;
       @ApiProperty({ example: 'Payment Methods ', description: ' Payments Methods' })
-         @Column()
-         paymentMethod:string;
+      @Column()
+      paymentMethod:string;
       @ApiProperty({ example: PaymentStatus.COMPLETED, description: ' Payments Methods' })
-         @Column()
-         status:PaymentStatus;
+      @Column()
+      status:PaymentStatus;
        @OneToOne(() => User, { onDelete: 'CASCADE' })
        @JoinColumn({ name: 'user_id' }) 
         user: User;

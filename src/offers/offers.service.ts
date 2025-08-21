@@ -27,6 +27,7 @@ export class OfferService {
 
   async createOffer(payload:SendOfferDto): Promise<ResponseInterface<Offer>> {
     const {buyer_id,product_id,price}=payload
+    
     const product = await this.productService.findByIdWithSeller(product_id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -43,8 +44,9 @@ export class OfferService {
       price,
       status: OfferStatus.PENDING,
     });
+    await this.offerRepo.save(offer)
    const conversation = await this.coversationService.getOrCreate({productId:product.id,userIds:[product.user_id , buyer_id],offer:offer,offerType:OfferStatus.PENDING})
-   console.log(conversation)
+  //  console.log(conversation)
 await this.notificationService.createNotification({
   userId:product.user_id,
   related:NotificationRelated.CONVERSATION,
@@ -55,9 +57,9 @@ await this.notificationService.createNotification({
   notificationFor:UserRoles.USER
 })
 
-    return {message:"Offer sent Successfully!",status:'success',statusCode:201,data: await this.offerRepo.save(offer)}
-  }
-
+    return {message:"Offer sent Successfully!",status:'success',statusCode:201,data:offer}
+  } 
+ 
   async acceptOffer({offerId, sellerId}:{offerId:number;sellerId:string}): Promise<ResponseInterface<Order>> {
     const offer = await this.offerRepo.findOne({
       where: { id: offerId },
@@ -78,7 +80,7 @@ await this.notificationService.createNotification({
       throw new ForbiddenException('You are not the owner of the product');
     }
 
-    offer.status = OfferStatus.ACCEPTED;
+   
     await this.offerRepo.save(offer);
      const conversation = await this.coversationService.getOrCreate({productId:product.id,userIds:[product.user_id , offer.seller.id],offer:offer,offerType:OfferStatus.ACCEPTED})
 await this.notificationService.createNotification({
@@ -89,7 +91,9 @@ await this.notificationService.createNotification({
   targetId:conversation.id,
   isImportant:true,
   notificationFor:UserRoles.USER
-})
+}) 
+offer.status = OfferStatus.ACCEPTED;
+ await this.offerRepo.save(offer);
     return {message:"Offer accepted successfully",status:'success',statusCode:201,data: await this.orderService.createOrderFromOffer(offer)};
   }
 

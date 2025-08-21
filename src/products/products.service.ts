@@ -13,6 +13,7 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 import { NotificationAction, NotificationRelated, NotificationType } from 'src/notifications/entities/notifications.entity';
 import { UserRoles } from 'src/user/enums/role.enum';
 import { User } from 'src/user/entities/user.entity';
+import { use } from 'passport';
 // import { Product } from './entities/product.entity';
 // import { CreateProductDto } from './dto/create-product.dto';
 // import { UpdateProductDto } from './dto/update-product.dto';
@@ -238,7 +239,7 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
 
-
+console.log(userId)
   const [data, total] = await this.productRepository.findAndCount({
     where,
     skip,
@@ -303,8 +304,7 @@ await this.productRepository.save(product);
   async getProduct(id:number):Promise<Product>{
     return await this.productRepository.findOne({
       where: { id },
-      relations: [ 'user','favorites'], 
-      
+      relations: [ 'user','favorites','images'], 
     });
   }
 
@@ -318,15 +318,8 @@ await this.productRepository.save(product);
     return {message:"Product updated",statusCode:200,data: product,status:"success"}
     }
    async getProductifFavourites(id: number, userId ?: string): Promise<any> {
-     const product = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.favorites', 'favorite')  // Join with the favorites table
-      .leftJoinAndSelect('favorite.user', 'user')  // Join with the user associated with the favorite
-      .leftJoinAndSelect('product.images', 'image')  // Join with product images
-       .leftJoinAndSelect('product.user', 'creator')   
-      .where('product.id = :id', { id })  // Filter by product id
-      .getOne();  // Get one product
-
+  
+const product = await this.getProduct(id)
     // If the product doesn't exist, throw an exception
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -348,10 +341,7 @@ await this.productRepository.save(product);
       (favorite) => favorite.user.id === userId
     );
 delete product.favorites
-const productImages = await this.productImageRepository.find({
-    where: { product_id: product.id },
-  }); 
-    product.images = productImages; // Attach images to the product
+
     // Return product with favorite status (true or false) and associated images
     return {
       message: 'Product retrieved successfully',

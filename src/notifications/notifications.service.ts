@@ -43,7 +43,6 @@ export class NotificationsService {
       notificationFor,
       isImportant,
     });
-
     // Save the notification to the database
     return await this.notificationsRepository.save(notification);
   }

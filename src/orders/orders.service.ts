@@ -62,8 +62,8 @@ const productName = offer.product.product_name
     related: NotificationRelated.ORDER,
     notificationFor: UserRoles.ADMIN,
     type: NotificationType.INFO,
-    targetId: offer.order.id,
-    msg: `#${offer.order.id} both are agreed with negotiation!`
+    targetId: order.id,
+    msg: `#${order.id} both are agreed with negotiation!`
   }
 ]
 await this.notificaionService.bulkInsertNotifications(notifications)
@@ -92,6 +92,20 @@ async findByBuyerId(
   };
 }
 
+
+async findOrder(
+ query:{ buyer_id ?: string,seller_id?:string,product_id?:number ,id?:number ,paymentStatus?:PaymentStatus,offer_id?:number ,delivery_id?:number,status?:OrderStatus }
+): Promise<Order> {
+  const orders = await this.orderRepository.findOne({
+    where: query,
+    relations: ['product', 'accepted_offer', 'delivery', 'buyer', 'seller','shipments'],
+    order: { created_at: 'DESC' }, // Optional: newest orders first
+  });
+  if(!orders){
+    throw new Error('Order not found');
+  }
+  return orders;
+}
 async findBySellerId(
   sellerId: string,
   page :number =1,

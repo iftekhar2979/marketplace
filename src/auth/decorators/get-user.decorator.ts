@@ -15,6 +15,11 @@ export const GetReceiver = createParamDecorator((data: unknown, ctx: ExecutionCo
   // req.user.password = undefined;
   return req.receiver;
 });
+export const GetConversation = createParamDecorator((data: unknown, ctx: ExecutionContext): User => {
+  const req = ctx.switchToHttp().getRequest();
+  // req.user.password = undefined;
+  return req.conversation;
+});
 export const GetFileDestination = createParamDecorator((data: unknown, ctx: ExecutionContext):string => {
   const req = ctx.switchToHttp().getRequest();
   const file = req.file;

@@ -181,6 +181,9 @@ export class SocketService {
 
       const receiverSocket = this.getSocketByUserId(receiverId);
       const senderSocket = this.getSocketByUserId(senderId);
+      console.log(senderSocket ,message)
+      delete message.conversation
+      delete message.sender
      if(receiverSocket){
                 receiverSocket.emit(`conversation-${conversation_id}`,message)
             }
@@ -199,8 +202,9 @@ export class SocketService {
       if (!data.conversation_id || !data.msg || !payload.id) {
         throw new Error('Invalid message data!');
       }
+      console.log(data)
     const conversation_id = data.conversation_id
-const {sender,receiver,conversation}= await this.participantService.checkEligablity({conversation_id,user_id:payload.id})
+    const {sender,receiver,conversation}= await this.participantService.checkEligablity({conversation_id,user_id:payload.id})
 if(!sender && !receiver){
 throw new BadRequestException("You are not eligable for this chat .")
 }

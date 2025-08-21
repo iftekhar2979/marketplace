@@ -64,7 +64,7 @@ product: Product;
 
   @ApiProperty({ example: 'uuid-of-delivery', description: 'Delivery ID' })
   @Column({ nullable: true })
-  delivery_id: string;
+  delivery_id: number;
 
   // 📦 Order status
   @ApiProperty({ example: 'pending', description: 'Status of the order (pending, confirmed, etc.)' })

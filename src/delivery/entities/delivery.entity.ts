@@ -11,6 +11,8 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from 'src/orders/entities/order.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Service } from 'src/transglobal/entity/courier_details.entity';
+import { Shipment } from './shipments.entity';
 
 export enum DeliveryStatus {
   PENDING = 'pending',
@@ -36,27 +38,20 @@ export class Delivery {
   @ApiProperty({ example: 'pending', enum: DeliveryStatus, description: 'Current status of the delivery' })
   @Column({ type: 'enum', enum: DeliveryStatus, default: DeliveryStatus.PENDING })
   status: DeliveryStatus;
-
-  @ApiProperty({ example: '123 Main St, NY', description: 'Delivery address' })
-  @Column()
-  address: string;
-
-  @ApiProperty({ example: 'DHL', description: 'Courier name or service used' })
-  @Column({ nullable: true })
-  courier?: string;
-
-  @ApiProperty({ example: 'TRK12345678', description: 'Tracking number (if any)' })
-  @Column({ nullable: true })
-  tracking_number?: string;
-
-  @ApiProperty({ description: 'Estimated delivery date' })
-  @Column({ type: 'timestamp with time zone', nullable: true })
-  estimated_delivery_date?: Date;
-
+  @Column('int',{nullable: true})
+  transgloal_id: number;
+  @ManyToOne(() => Service, (service) => service.id, { nullable: true })
+  @JoinColumn({ name: 'transglobal_id' })
+  service: Service; 
+  @Column('int',{nullable: true})
+  shipment_id: number;
+  @ManyToOne(() => Shipment, (shipment) => shipment.id, { nullable: true })
+  @JoinColumn({ name: 'shipment_id' })
+  shipment: Shipment;
   @ApiProperty({ description: 'Timestamp when the delivery was created' })
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: Date;
-
+  
   @ApiProperty({ description: 'Timestamp when the delivery was last updated' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;

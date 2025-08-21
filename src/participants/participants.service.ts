@@ -75,6 +75,7 @@ if(product_id){
           email: true,
           image: true,
           id: true,
+          isActive:true
         },
       },
     })}
@@ -98,7 +99,7 @@ if(product_id){
       // throw new BadRequestException("You don't have access for this chat!")
       return {sender:null,receiver:null,conversation:null}
     }
-    return {sender ,receiver,conversation}
+    return {sender,receiver,conversation}
     }
 
     async findMyFriends(userId: string): Promise<User[]> {
@@ -108,8 +109,9 @@ if(product_id){
     .leftJoinAndSelect('participant.conversation', 'conversation')
     .where('participant.user_id = :userId', { userId })
     .getMany();
-    if (!conversations.length) {
-      throw new NotFoundException('No conversations found for this user');
+    // console.log(conversations)
+    if (!conversations || conversations.length === 0) {
+     return []
     }
     
     const userIdsInSameConversations = conversations.map((participant) => participant.conversation.id);

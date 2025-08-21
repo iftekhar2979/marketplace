@@ -106,21 +106,19 @@ export class MessagesService {
   }
    async getMessages({
     conversationId,
+    conversation,
     receiver,
     page = 1,
     limit = 10,
-  }:{conversationId:number,receiver:Partial<User>,page:number,limit:number}): Promise<ResponseInterface<{receiver:Partial<User>,messages:Messages[]}>> {
-    // Calculate skip and take based on page and limit
+  }:{conversationId:number,receiver:Partial<User>,conversation:Conversations,page:number,limit:number}): Promise<ResponseInterface<{receiver:Partial<User>,conversation:Conversations,messages:Messages[]}>> {
     const skip = (page - 1) * limit;
     const take = limit;
-// this.socketService.joinRoom({roomkey:`conversation-${conversationId}`})
-    // Query to get the messages with the required relations
     const [messages, total] = await this.messageRepo.findAndCount({
       where: { conversation: { id: conversationId } },
-      relations: [ 'attachments',], 
-      order: { created_at: 'DESC' },  // Ordering by created_at
-      skip: skip, // Skip for pagination
-      take: take, // Limit the number of messages returned
+      relations: [ 'attachments','offer'], 
+      order: { created_at: 'DESC' },  
+      skip: skip,
+      take: take,
     });
     const lastmsg =messages[messages.length-1]
     // console.log(receiver, messages[messages.length-1].sender_id)
@@ -137,7 +135,7 @@ export class MessagesService {
       status:"success",
       message:"Messages retrived successfully",
       statusCode:200,
-      data:{receiver, messages},
+      data:{receiver,conversation, messages},
       pagination : pagination({page,limit,total}),
     };
   }

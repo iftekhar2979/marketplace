@@ -90,7 +90,6 @@ export class AuthService {
         is_deleted:false,
         is_seller_verified:false,
         status:AccountStatus.INACTIVE,
-
       })
     const otp =  await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
       this.logger.log("Login the user and send the token and mail", AuthService.name);
