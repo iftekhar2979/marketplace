@@ -117,8 +117,8 @@ export class MessagesService {
       where: { conversation: { id: conversationId } },
       relations: [ 'attachments','offer'], 
       order: { created_at: 'DESC' },  
-      skip: skip,
-      take: take,
+      // skip: skip,
+      // take: take,
     });
     const lastmsg =messages[messages.length-1]
     // console.log(receiver, messages[messages.length-1].sender_id)

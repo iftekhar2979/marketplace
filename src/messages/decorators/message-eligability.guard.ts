@@ -23,6 +23,7 @@ export class MessageEligabilityGuard {
     for (const participant of participants) {
       if (participant.user.id === user.id) {
         eligable = true;
+        participant.conversation.product = participant.product; // Assuming the product is needed in the conversation
         request.conversation = participant.conversation; // Assuming the first participant's conversation is the one we want
       } else {
         receiver = participant.user;

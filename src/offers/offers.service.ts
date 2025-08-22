@@ -65,6 +65,10 @@ await this.notificationService.createNotification({
       where: { id: offerId },
       relations: ['product','buyer','seller'],
     });
+    // console.log(offer)
+    if(!offer){
+      throw new NotFoundException('Offer not found!');
+    }
     if(offer.status === OfferStatus.ACCEPTED){
       throw new BadRequestException("Offer already accepted!")
     }
@@ -79,10 +83,10 @@ await this.notificationService.createNotification({
     if (product.user_id !== sellerId) {
       throw new ForbiddenException('You are not the owner of the product');
     }
-
-   
-    await this.offerRepo.save(offer);
-     const conversation = await this.coversationService.getOrCreate({productId:product.id,userIds:[product.user_id , offer.seller.id],offer:offer,offerType:OfferStatus.ACCEPTED})
+    // console.log(offer)
+    const conversation = await this.coversationService.getOrCreate({productId:product.id,userIds:[product.user_id , offer.seller.id],offer:offer,offerType:OfferStatus.ACCEPTED})
+    // await this.offerRepo.save(offer);
+    // console.log(conversation)
 await this.notificationService.createNotification({
   userId:offer.seller.id,
   related:NotificationRelated.CONVERSATION,
@@ -94,7 +98,10 @@ await this.notificationService.createNotification({
 }) 
 offer.status = OfferStatus.ACCEPTED;
  await this.offerRepo.save(offer);
-    return {message:"Offer accepted successfully",status:'success',statusCode:201,data: await this.orderService.createOrderFromOffer(offer)};
+
+const order = await this.orderService.createOrderFromOffer(offer)
+
+    return {message:"Offer accepted successfully",status:'success',statusCode:201,data:order };
   }
 
   async rejectOffer({ offerId, sellerId }: { offerId: number; sellerId: string }): Promise<ResponseInterface<Order>> {

@@ -61,16 +61,13 @@ if(status === ProductStatus.SOLD) {
      const sellingPrice = parseFloat(createProductDto.selling_price);
   const purchasingPrice = parseFloat(createProductDto.phurcasing_price); // keep original spelling if necessary
   const quantity = parseInt(createProductDto.quantity, 10);
-  const height = parseFloat(createProductDto.height);
-  const width = parseFloat(createProductDto.width);
-  const length = parseFloat(createProductDto.length);
-  const weight = parseFloat(createProductDto.weight);
+
   // const postalCode = parseFloat(createProductDto.postal_code)
   const isNegotiable = createProductDto.is_negotiable.toLowerCase() === 'true';
-  const id_address_residential = createProductDto.is_address_residential.toLocaleLowerCase() === 'true';
+  // const id_address_residential = createProductDto.is_address_residential.toLocaleLowerCase() === 'true';
 
   // Validate that numeric values are valid
-  if (isNaN(sellingPrice) || isNaN(purchasingPrice) || isNaN(quantity) || isNaN(height) || isNaN(width) || isNaN(length) || isNaN(weight)) {
+  if (isNaN(sellingPrice) || isNaN(purchasingPrice) || isNaN(quantity) ) {
     throw new BadRequestException('Invalid numeric values for price, quantity, or dimensions');
   }
 
@@ -93,18 +90,7 @@ if(status === ProductStatus.SOLD) {
       product.brand = createProductDto.brand;
       product.is_negotiable = isNegotiable;
       product.status = ProductStatus.PENDING; // Default status
-      product.height = height;
-      product.width = width;
-      product.length = length;
-      product.weight = weight;
-      product.city = createProductDto.city;
-      product.postal_code = createProductDto.postal_code;
-      product.country_id = parseInt(createProductDto.country_id, 10);
-      product.country_code = createProductDto.country_code;
-      product.is_address_residential = id_address_residential;
-      product.address_line_1 = createProductDto.address_line_1;
-      product.address_line_2 = createProductDto.address_line_2;
-      product.country = createProductDto.country;
+     
 
       // Save product inside the transaction
       const savedProduct = await queryRunner.manager.save(Product, product);

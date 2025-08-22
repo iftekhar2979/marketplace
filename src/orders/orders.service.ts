@@ -1,5 +1,5 @@
 
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { Repository } from 'typeorm';
@@ -17,7 +17,18 @@ export class OrdersService {
     private readonly notificaionService:NotificationsService
       ){}
 async createOrderFromOffer(offer: Offer): Promise<Order> {
-  console.log(offer)
+  // console.log("Offer ID:", offer);
+ try{
+  if (offer.order_id) {
+    throw new BadRequestException('Order already exists for this offer');
+  }
+ const existingOrder = await this.orderRepository.findOne({
+    where: { product:{ id: offer.product.id }},
+    relations: ['product', 'accepted_offer', 'delivery', 'buyer', 'seller'],
+  });
+  if (existingOrder) {
+    throw new BadRequestException('Order already exists for this Product');
+  }
   const order = this.orderRepository.create({
     paymentStatus: PaymentStatus.PENDING,
     status: OrderStatus.PENDING,
@@ -31,11 +42,13 @@ async createOrderFromOffer(offer: Offer): Promise<Order> {
     delivery: null,
     delivery_id: null,
   });
+  console.log("ORDERInfo",order)
 const productName = offer.product.product_name
   const notifications =[
     {
 
     userId: offer.buyer.id,
+    user: offer.buyer,
     isImportant: true,
     action: NotificationAction.UPDATED,
     related: NotificationRelated.ORDER,
@@ -47,6 +60,7 @@ const productName = offer.product.product_name
     {
 
     userId: offer.seller.id,
+    user : offer.seller,
     isImportant: true,
     action: NotificationAction.UPDATED,
     related: NotificationRelated.ORDER,
@@ -67,8 +81,11 @@ const productName = offer.product.product_name
   }
 ]
 await this.notificaionService.bulkInsertNotifications(notifications)
-  return await this.orderRepository.save(order);
-}
+  return await this.orderRepository.save(order)
+}catch (error) {
+    console.error('Error creating order from offer:', error);
+    throw new BadRequestException('Failed to create order from offer');
+}}
 
 async findByBuyerId(
   buyerId: string,

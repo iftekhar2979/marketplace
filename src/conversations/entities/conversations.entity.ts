@@ -19,6 +19,7 @@ import { User } from 'src/user/entities/user.entity';
 import { ConversationParticipant } from 'src/participants/entities/participants.entity';
 import { Product } from 'src/products/entities/products.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
+import e from 'express';
 
 @Entity('conversations')
 export class Conversations {
@@ -35,7 +36,7 @@ export class Conversations {
   image?: string;
 
   @ApiProperty({ description: 'Associated order for the conversation' })
-  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, { onDelete: 'CASCADE' ,})
   @JoinColumn({ name: 'product_id' })
   product: Product;
 

@@ -181,7 +181,7 @@ export class SocketService {
 
       const receiverSocket = this.getSocketByUserId(receiverId);
       const senderSocket = this.getSocketByUserId(senderId);
-      console.log(senderSocket ,message)
+      console.log(senderSocket ,message) 
       delete message.conversation
       delete message.sender
      if(receiverSocket){
@@ -215,7 +215,8 @@ throw new BadRequestException("You are not eligable for this chat .")
         );
       }
             const message = this.messageRepository.create({sender,msg:data.msg,type:'text',conversation,isRead:false})
-       this.handleMessageDelivery({senderId:sender.id,receiverId:receiver.id,conversation_id:conversation.id,message})
+       console.log(message)
+            this.handleMessageDelivery({senderId:sender.id,receiverId:receiver.id,conversation_id:conversation.id,message})
             await this.messageRepository.save(message)
             conversation.lastmsg = message
             await this.conversationRepository.save(conversation)

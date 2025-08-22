@@ -20,8 +20,11 @@ export class Messages {
   @JoinColumn({ name: 'sender_id' })
   sender: User;
  @ApiProperty({ example: '1', description: 'Offer Id' })
-  @Column({ nullable:true  })
+  @Column({ nullable:true  ,unique:false})
   offer_id: number;
+ @ApiProperty({ example: '1', description: 'Offer Id' })
+  @Column({ nullable:true  ,unique:false})
+  conversation_id: number;
 
   @ApiProperty({ example: 'Hello!', description: 'Message text' })
   @Column({ type: 'text', nullable: true })

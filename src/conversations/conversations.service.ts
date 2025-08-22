@@ -78,9 +78,13 @@ if(offerType === OfferStatus.PENDING){
         conversation: existingConversation
       });
       await this.messageRepo.save(msg)
-      console.log(msg)
+      delete msg.offer.buyer
+      delete msg.offer.seller
+      delete msg.offer.product
+      console.log("Existing Conversation",existingConversation)
 this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }else if(offerType === OfferStatus.ACCEPTED){
+      console.log(offerType)
 const msg= this.messageRepo.create({
         sender_id: offer.seller_id,
         isRead: false,
@@ -91,9 +95,10 @@ const msg= this.messageRepo.create({
         conversation: existingConversation
       });
       await this.messageRepo.save(msg)
-      console.log(msg)
+      // console.log(msg)
       this.socketService.handleMessageDelivery({senderId:offer.buyer_id,receiverId:offer.seller_id,conversation_id:existingConversation.id,message:msg})
     }else{
+      console.log(offerType)
     const msg = this.messageRepo.create({
         sender_id: offer.seller_id,
         isRead: false,
@@ -109,6 +114,9 @@ const msg= this.messageRepo.create({
   }
   
 async getOrCreate({productId, userIds, offer,offerType}:{productId: number, userIds: string[], offer: Offer,offerType:OfferStatus}): Promise<Conversations> {
+  try{
+
+  
   const existing = await this.participantService.checkChatAlreadyExist({
     product_id: productId,
     user_ids: userIds
@@ -120,12 +128,14 @@ async getOrCreate({productId, userIds, offer,offerType}:{productId: number, user
       where: { product: { id: productId } },
       relations: ['participants', 'product']
     });
-    // console.log(existingConversation)
+    // console.log(existingConversation) 
+    // console.warn("Existing Conversation")
 await this.offerStatusHandle({offer,existingConversation,offerType})
     return existingConversation;
+ 
   }
-
-  // Case: New conversation - use transaction
+ 
+  // Case: New conversation - use transaction   
   return await this.dataSource.transaction(async manager => {
     const product = await this.productService.getProduct(productId);
     if (!product) {
@@ -167,6 +177,10 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
 
     return savedConversation;
   });
+   }catch(error){
+    console.log(error)
+    throw new BadRequestException("Error in fetching existing conversation")
+  }
 }
   async getAllConversations(user_id: string, page: number, limit: number) {
   try {
@@ -178,6 +192,7 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
     const [conversations, total] = await this.conversationRepo
       .createQueryBuilder('conversation')
       .leftJoinAndSelect('conversation.participants', 'participant')
+      .leftJoinAndSelect('conversation.product', 'product')
       .leftJoin('participant.user', 'user')  // Join with user but don't auto-select full user
       .leftJoinAndSelect('conversation.lastmsg', 'lastmsg') // Join with last message
       .addSelect([
@@ -187,6 +202,7 @@ await this.offerStatusHandle({offer,existingConversation,offerType})
         'user.image',
         'user.email',
         'user.isActive',
+   
       ])  // Only select necessary fields from user
       .where('user.id = :user_id', { user_id }) // Filter conversations where user.id is not equal to provided user_id
       .skip(skip) // Apply pagination

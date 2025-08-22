@@ -67,7 +67,7 @@ if(product_id){
  async getParticipants(conversationId: number): Promise<ConversationParticipant[]> {
     return await this.participantRepo.find({
       where: { conversation: { id: conversationId } },
-      relations: ['user','conversation'],  // We are joining the user relation
+      relations: ['user','conversation','product'],  // We are joining the user relation
       select: {
         user: {
           firstName: true,
@@ -77,6 +77,12 @@ if(product_id){
           id: true,
           isActive:true
         },
+        product:{
+          id:true ,
+          product_name:true,
+          images:true,
+          purchasing_price:true,
+        }
       },
     })}
     async checkEligablity ({conversation_id,user_id}:{user_id:string,conversation_id:number}):Promise<{sender:null| User ,receiver:null | User , conversation: null | Conversations}>{

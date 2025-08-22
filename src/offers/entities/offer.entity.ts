@@ -7,12 +7,14 @@ import {
   UpdateDateColumn,
   JoinColumn,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from 'src/orders/entities/order.entity';
 import { OfferStatus } from '../enums/offerStatus.enum';
 import { User } from 'src/user/entities/user.entity';
 import { Product } from 'src/products/entities/products.entity';
+import { Messages } from 'src/messages/entities/messages.entity';
 
 @Entity('offers')
 export class Offer {
@@ -57,6 +59,8 @@ order_id: number;
   @ApiProperty({ example: 'pending', description: 'Status of the offer (e.g., pending, accepted, rejected)' })
   @Column({ default: 'pending' })
   status: OfferStatus;
+@OneToMany(() => Messages, (message) => message.offer)
+messages: Messages[];
 
   @ApiProperty({ description: 'Timestamp when the offer was created' })
   @CreateDateColumn({ type: 'timestamp with time zone' })
