@@ -29,7 +29,7 @@ export class OtpService {
         type:type,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000) 
         });
-        console.log(newOtp)
+        // console.log(newOtp)
     
         return await this.otpRepository.save(newOtp);
     }

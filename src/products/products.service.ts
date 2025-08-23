@@ -225,7 +225,7 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
 
-console.log(userId)
+// console.log(userId)
   const [data, total] = await this.productRepository.findAndCount({
     where,
     skip,
@@ -236,8 +236,8 @@ console.log(userId)
 const productIds = data.map(product => product.id);
   const productImages = await this.productImageRepository.find({
     where: { product_id: In(productIds) },
-  }); 
-  data.forEach(product => {
+  });  
+  data.forEach(product => {  
     product.images = productImages.filter(image => image.product_id === product.id);
   });
   return {

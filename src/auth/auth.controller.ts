@@ -15,6 +15,8 @@ import {
   Session,
   NotFoundException,
   HttpCode,
+  HttpException,
+  HttpStatus,
   // ClassSerializerInterceptor,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
@@ -113,6 +115,7 @@ export class AuthController {
    */
   @Post("login")
   @HttpCode(200)
+
   @UseGuards(LocalAuthGuard)
   @UseInterceptors(TransformInterceptor)
   @ApiOperation({
@@ -123,10 +126,19 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: "Invalid credentials" })
   @ApiBody({ required: true, type: LoginUserDto })
   async loginPassportLocal(@Req() req: Request) {
-    const user = req.user;
+    const user = req.user as User;
 
     const token = await this.authService.signToken(user);
-
+if(!user.firstName){
+  throw new HttpException(
+      {
+        status: 'error',
+        message: 'Email verification required',
+        token,
+      },
+      HttpStatus.NOT_ACCEPTABLE,  // This sets the 406 HTTP status code
+    );
+}
     return { status: "success", data:user, token ,statusCode:200 };
   }
 

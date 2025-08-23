@@ -5,13 +5,16 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { UserRoles } from "../enums/role.enum";
 import { Product } from "src/products/entities/products.entity";
 import { Favorite } from "src/favourites/entities/favourite.entity";
+// import { Verification } from "./verification.entity";
 
 
 export enum USERSTATUS {
@@ -63,7 +66,7 @@ export class User {
   @Column({ type: "varchar",  nullable: true ,default:'not_verified'})
   @ApiProperty()
   status: USERSTATUS.NOT_VERIFIED;
-  @Column({ type: "int",  nullable: true })
+  @Column({ type: "int",  default: 0,})
   @ApiProperty()
   rating: 0;
   /**
@@ -118,5 +121,6 @@ export class User {
 
   @OneToMany(() => Favorite, (favorite) => favorite.user)
   favorites: Favorite[]; 
+
 
 }

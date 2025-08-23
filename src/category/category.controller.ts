@@ -9,6 +9,8 @@ import {
   Patch,
   Delete,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -16,6 +18,9 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Category } from './entity/category.entity';
 import { UpdateCategoryDto } from './dto/update-category';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/common/multer/multer.config';
+import { GetFileDestination } from 'src/auth/decorators/get-user.decorator';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -25,8 +30,12 @@ export class CategoryController {
   @Post()
   @ApiOperation({ summary: 'Create a new category' })
   @ApiResponse({ status: 201, description: 'Category created', type: Category })
- async create(@Body() createCategoryDto: CreateCategoryDto) {
-    return {status:"success",message:"Category created successfully",data: await this.categoryService.create(createCategoryDto), statusCode:201}
+    @UseInterceptors((FileInterceptor('image', multerConfig)))
+ async create(@Body() createCategoryDto: CreateCategoryDto ,@GetFileDestination() destination:string, @UploadedFile() file: Express.Multer.File) {
+  // console.log(first)  
+  console.log(destination) 
+  createCategoryDto.image = destination
+  return {status:"success",message:"Category created successfully",data: await this.categoryService.create(createCategoryDto), statusCode:201}
   }
 
   @Get()

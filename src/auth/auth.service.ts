@@ -92,7 +92,7 @@ export class AuthService {
         status:AccountStatus.INACTIVE,
       })
     const otp =  await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
-      this.logger.log("Login the user and send the token and mail", AuthService.name);
+      this.logger.log("Login the user and send the token and mail", AuthService.name); 
       const token: string = await this.signTokenSendEmailAndSMS(user, req,otp.otp);
 
       return { user, token };
@@ -122,7 +122,7 @@ export class AuthService {
 
     this.logger.log("Creating Verification", AuthService.name);
     const verification = await this.otpService.findOtpByUserId(userInfo.id);
-
+console.log("VERIFICATION",verification)
        if (!verification) {
       throw new NotFoundException("OTP not found or expired");
     }
@@ -130,7 +130,7 @@ export class AuthService {
       await this.otpService.removeOtpByUserId(userInfo.id);
       throw new BadRequestException("Too many attempts, please request a new OTP");
     }
-    if( verification.otp !== otp) { 
+    if( verification.otp !== otp) {  
       console.log(verification ,otp)
       await this.otpService.updateOtpAttempts(userInfo.id, verification.attempts + 1);
       throw new BadRequestException("Invalid OTP");
@@ -142,6 +142,7 @@ export class AuthService {
     if (!verification || (await verification).expiresAt < new Date()) {
       throw new NotFoundException("OTP expired");
     }
+    const verifications = await this.verificationRepository.findOne({where:{user_id:userInfo.id}})
     if( verification.type === OtpType.FORGOT_PASSWORD) {
       const user = await this.userRepository.findOne({ where: { id:userInfo.id } }) as any;
       if (!user) {
@@ -149,8 +150,17 @@ export class AuthService {
       }
       user.verification_type = OtpType.FORGOT_PASSWORD;
       const token = this.jwtService.sign({ id:user.id, verification_type:OtpType.FORGOT_PASSWORD });
+         verifications.is_email_verified = true;
+    verifications.status = AccountStatus.ACTIVE;
+    await this.verificationRepository.save(verifications);
       return { message: "OTP verified successfully", data:{},token };
     }
+    if(!verifications){
+      throw new NotFoundException("Verification not found");
+    }
+    verifications.is_email_verified = true;
+    verifications.status = AccountStatus.ACTIVE;
+    await this.verificationRepository.save(verifications);
     return {message: "OTP verified successfully", data:{},status:"success"};
   }
   async resetPassword(resetPasswordDto: ResetPasswordDto, user) {
@@ -184,9 +194,17 @@ const { password, passwordConfirm } = resetPasswordDto;
 
     this.logger.log("Searching User with provided email", AuthService.name);
     const user = await this.userRepository.findOne({ where: { email } });
-
+// console.log(user)
     this.logger.log("Verifying User", AuthService.name);
     if (user && (await argon2verify(user.password, password))) {
+      const verification = await this.verificationRepository.findOne({where:{user_id:user.id}}) 
+      if(!verification?.is_email_verified){
+        await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
+        const token = this.jwtService.sign({id: user.id, verification_type: OtpType.REGISTRATION});
+        return token
+        // throw new NotAcceptableException("Please verify your email to login")
+      }
+      this.logger.log("User Verified", AuthService.name);
       return user;
     }
 
@@ -248,7 +266,9 @@ const { password, passwordConfirm } = resetPasswordDto;
     console.log(user)
     const payload: JwtPayload = { id: user.id };
     this.logger.log("Signing token", AuthService.name);
-
+if(!user.firstName){
+  return user
+}
     return this.jwtService.sign(payload);
   }
 

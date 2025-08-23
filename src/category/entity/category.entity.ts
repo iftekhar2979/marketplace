@@ -11,4 +11,7 @@ export class Category {
   @ApiProperty({ example: 'Electronics', description: 'Category name' })
   @Column()
   name: string;
+  @ApiProperty({ example: 'Image', description: 'Image Url' })
+  @Column()
+  image: string;
 }

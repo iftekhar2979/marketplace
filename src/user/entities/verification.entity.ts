@@ -36,5 +36,6 @@ export class Verification {
   @Column({ default: 'active' })
   @ApiProperty({ description: 'Status of the verification', default: 'active' })
   @IsString()
-  status: string;
-}
+  status: string; 
+
+} 
