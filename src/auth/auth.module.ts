@@ -14,6 +14,7 @@ import { UserModule } from "../user/user.module";
 import { Verification } from "src/user/entities/verification.entity";
 import { OtpModule } from "src/otp/otp.module";
 import { Otp } from "src/otp/entities/otp.entity";
+import { Wallets } from "src/wallets/entity/wallets.entity";
 
 /**
  * It is a feature module where we keep the controller, service and other code related to authentication and  we import other modules and configure modules and packages that are being used in this module.
@@ -28,7 +29,7 @@ import { Otp } from "src/otp/entities/otp.entity";
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User,Verification]),
+    TypeOrmModule.forFeature([User,Verification,Wallets]),
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

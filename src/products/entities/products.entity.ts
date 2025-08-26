@@ -29,6 +29,7 @@ import { ProductStatus } from '../enums/status.enum';
 import { User } from 'src/user/entities/user.entity';
 import { Favorite } from 'src/favourites/entities/favourite.entity';
 import { number } from 'joi';
+import { ProductBoosts } from 'src/product-boost/entities/product-boost.entity';
 
 @Entity('products')
 export class Product {
@@ -125,21 +126,35 @@ export class Product {
   @IsBoolean()
   @Column({ default: false })
   is_negotiable: boolean;
+  @ApiProperty({ example: true, description: 'Whether the price is negotiable' })
+  @IsBoolean()
+  @Column({ default: false })
+  is_boosted: boolean;
+
+     @ApiProperty({ description: 'Boost start time for the product' })
+  @Column({ type: 'timestamp', nullable: true })
+  boost_start_time: Date;
+
+  @ApiProperty({ description: 'Boost end time for the product' })
+  @Column({ type: 'timestamp', nullable: true })
+  boost_end_time: Date;
+
   @ApiProperty({ example: '2025-08-07T12:00:00Z', description: 'Creation timestamp' })
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: Date;
 
   @ApiProperty({ example: '2025-08-08T15:00:00Z', description: 'Last update timestamp' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
-  updated_at: Date;
+updated_at: Date;
 
   @ManyToOne(() => User, (user) => user.products, { eager: true })
 @JoinColumn({ name: 'user_id' })
 user: User; 
 @OneToMany(() => Favorite, (favorite) => favorite.product)
-  favorites: Favorite[];  
+favorites: Favorite[];  
+@OneToMany(() => ProductBoosts, (favorite) => favorite.product)
+boosted: ProductBoosts[];  
 }
-
 
 export class FavouriteProduct extends Product {
   @ApiProperty({ example: true, description: 'Is the product marked as favorite by the current user' })

@@ -1,4 +1,6 @@
-import { Otp } from 'src/otp/entities/otp.entity';
+import { UserService } from 'src/user/user.service';
+import { OtpService } from 'src/otp/otp.service';
+import { Otp, OtpType } from 'src/otp/entities/otp.entity';
 import {
   Controller,
   Get,
@@ -53,6 +55,8 @@ import { GoogleAuthGuard } from "./guards/google-auth.guard";
 import { OtpVerificationDto } from './dto/otp-verification.dto';
 import { JwtAuthenticationGuard } from './guards/session-auth.guard';
 import { ForgetPasswordGuard } from './guards/forget-password.guard';
+import { JwtService } from '@nestjs/jwt';
+import { MailService } from 'src/mail/mail.service';
 
 /**
  * AuthController is responsible for handling incoming requests specific to Authentication related APIs and returning responses to the client.
@@ -61,7 +65,7 @@ import { ForgetPasswordGuard } from './guards/forget-password.guard';
 @Controller("auth")
 @ApiTags("Auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService,private readonly jwtService:JwtService,private readonly OtpService:OtpService, private readonly mailService: MailService,private readonly userService:UserService) {}
   @Post("signup")
   @ApiOperation({
     description: "Api to register new users.",
@@ -126,10 +130,12 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: "Invalid credentials" })
   @ApiBody({ required: true, type: LoginUserDto })
   async loginPassportLocal(@Req() req: Request) {
-    const user = req.user as User;
-
+    const user = req.user as any;
+// console.log(user)
     const token = await this.authService.signToken(user);
 if(!user.firstName){
+  // console.log(payload)
+const token = await this.authService.userNotAccepted({existingToken:user})
   throw new HttpException(
       {
         status: 'error',
@@ -182,7 +188,7 @@ if(!user) {
   })
   @ApiUnauthorizedResponse({ description: "Session Expired!" })
   async VerifyOtp(@Body() otp:OtpVerificationDto ,@GetUser()  user:User) {
-console.log(user)
+// console.log(user)
      const token = await this.authService.OtpVerify(otp,user);
     return token
   }

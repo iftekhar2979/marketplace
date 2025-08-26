@@ -8,8 +8,8 @@ import helmet from "helmet";
 import csurf from "csurf";
 import xssClean from "xss-clean";
 import hpp from "hpp";
-import { json, urlencoded } from "express";
-import { ConfigService } from "@nestjs/config";
+import { json, raw, urlencoded } from "express";
+import { ConfigService } from "@nestjs/config"; 
 import { AppModule } from "./app.module";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
@@ -45,7 +45,7 @@ async function bootstrap() {
     const seederService = app.get(SeederService);
   // await seederService.seedData()
   await seederService.seedAdminUser();
-
+  app.use('/api/v1/stripe/webhook', raw({ type: "*/*" })),
   app.setGlobalPrefix("/api");
   app.enableVersioning({
     defaultVersion: "1",

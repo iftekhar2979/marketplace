@@ -214,7 +214,7 @@ throw new BadRequestException("You are not eligable for this chat .")
           'Message Delivered Failed!! Because Sender and Receiver are same',
         );
       }
-            const message = this.messageRepository.create({sender,msg:data.msg,type:'text',conversation,isRead:false})
+            const message = this.messageRepository.create({sender,msg:data.msg,type:'text',conversation,isRead:false,conversation_id:conversation.id})
        console.log(message)
             this.handleMessageDelivery({senderId:sender.id,receiverId:receiver.id,conversation_id:conversation.id,message})
             await this.messageRepository.save(message)

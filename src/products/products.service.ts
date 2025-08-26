@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, EntityManager, ILike, In, Repository } from 'typeorm';
+import { Between, DataSource, EntityManager, ILike, In, LessThan, LessThanOrEqual, Repository } from 'typeorm';
 import { FavouriteProduct, Product } from './entities/products.entity';
 import { ProductImage } from './entities/productImage.entity';
 import { CreateProductDto } from './dto/CreateProductDto.dto';
@@ -14,6 +14,10 @@ import { NotificationAction, NotificationRelated, NotificationType } from 'src/n
 import { UserRoles } from 'src/user/enums/role.enum';
 import { User } from 'src/user/entities/user.entity';
 import { use } from 'passport';
+import { Transections } from 'src/transections/entity/transections.entity';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { WalletsService } from 'src/wallets/wallets.service';
+import { Wallets } from 'src/wallets/entity/wallets.entity';
 // import { Product } from './entities/product.entity';
 // import { CreateProductDto } from './dto/create-product.dto';
 // import { UpdateProductDto } from './dto/update-product.dto';
@@ -28,7 +32,10 @@ export class ProductsService {
      private readonly dataSource: DataSource, 
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
-    private readonly notificationService: NotificationsService
+    @InjectRepository(Wallets)
+    private readonly walletsRepo: Repository<Wallets>,
+    private readonly notificationService: NotificationsService,
+    // private readonly walletService: WalletsService
   ) {}
 // async getProductById({product_id,status,}){
 
@@ -58,14 +65,26 @@ if(status === ProductStatus.SOLD) {
     });
   }
   async create(createProductDto: CreateProductDto, user: User) {
+
+    const wallets = await this.walletsRepo.findOne({where:{user_id:user.id}})
+    if(!wallets){
+      await this.walletsRepo.insert({user:user, user_id:user.id , currency:"BDT" , version:0 , balance:0})
+       throw new BadRequestException("You Wallet is not active . It's activing soon !")
+    }
+    if(createProductDto.is_boosted){
+      if(wallets.balance === 0 || wallets.balance <= 10){
+        throw new BadRequestException("You should have minimum 10 balance in your wallet to boost a product")
+      }
+    }
      const sellingPrice = parseFloat(createProductDto.selling_price);
   const purchasingPrice = parseFloat(createProductDto.phurcasing_price); // keep original spelling if necessary
   const quantity = parseInt(createProductDto.quantity, 10);
 
   // const postalCode = parseFloat(createProductDto.postal_code)
   const isNegotiable = createProductDto.is_negotiable.toLowerCase() === 'true';
+  const isBoosted = createProductDto.is_boosted.toLowerCase() === 'true';
   // const id_address_residential = createProductDto.is_address_residential.toLocaleLowerCase() === 'true';
-
+const boostDays = 3
   // Validate that numeric values are valid
   if (isNaN(sellingPrice) || isNaN(purchasingPrice) || isNaN(quantity) ) {
     throw new BadRequestException('Invalid numeric values for price, quantity, or dimensions');
@@ -90,9 +109,15 @@ if(status === ProductStatus.SOLD) {
       product.brand = createProductDto.brand;
       product.is_negotiable = isNegotiable;
       product.status = ProductStatus.PENDING; // Default status
-     
+      product.is_boosted = isBoosted;
+      product.boost_start_time = new Date()
+      product.boost_end_time = isBoosted ? new Date(Date.now() + boostDays * 24 * 60 * 60 * 1000) : null; // 7 days boost
 
-      // Save product inside the transaction
+      if(createProductDto.is_boosted){
+        wallets.balance -= 3
+        wallets.version += 1
+   await queryRunner.manager.save(Wallets, wallets)
+      }
       const savedProduct = await queryRunner.manager.save(Product, product);
 
       // Handle images if any
@@ -103,10 +128,11 @@ if(status === ProductStatus.SOLD) {
           img.product_id = savedProduct.id;  // Associate image with the product
           return img;
         });
-console.log(productImages)
+        
         // Save product images inside the transaction
         await queryRunner.manager.save(ProductImage, productImages);
       }
+
 
       // Commit the transaction after saving both product and images
       await queryRunner.commitTransaction();
@@ -182,7 +208,22 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
     limit,
   };
 }
+ shuffleArray(array) {
+  let currentIndex = array.length, randomIndex, temporaryValue;
 
+  // While there remain elements to shuffle
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // Swap elements
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
    async findAllWithFilters(query: GetProductsQueryDto) {
   const {
     term,
@@ -230,9 +271,10 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
     where,
     skip,
     take,
-    order: { created_at: 'DESC' },
+    order: {is_boosted:"DESC",boost_end_time: "ASC",created_at: 'DESC' },
     // relations: ['images'],  // Ensure images are loaded
   });
+ 
 const productIds = data.map(product => product.id);
   const productImages = await this.productImageRepository.find({
     where: { product_id: In(productIds) },
@@ -240,13 +282,41 @@ const productIds = data.map(product => product.id);
   data.forEach(product => {  
     product.images = productImages.filter(image => image.product_id === product.id);
   });
+
+  const boostedProducts = data.filter(product => product.is_boosted);
+    // console.log(boostedProducts)
+  const nonBoostedProducts = data.filter(product => !product.is_boosted);
+  // Shuffle only the boosted products
+  const shuffledBoostedProducts = this.shuffleArray(boostedProducts);
+  const finalData = [...shuffledBoostedProducts, ...nonBoostedProducts];
+  // console.log(finalData)
   return {
     message: "Products retrieved successfully",
     statusCode: 200,
-    data,
+    data:finalData,
     pagination: pagination({ page: parseInt(page), limit: parseInt(limit), total }),
   };
 }
+
+@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Runs every minute for demonstration ; adjust as needed .
+  async expireBoostedProducts() {
+    const currentDate = new Date();
+
+    const expiredBoostedProducts = await this.productRepository.find({
+      where: {
+        is_boosted: true,
+        boost_end_time: LessThanOrEqual(currentDate), // Expired boosts
+      },
+    });
+    // console.log()
+console.log("Cron Job : ",expiredBoostedProducts)
+    for (const product of expiredBoostedProducts) {
+      product.is_boosted = false;
+      product.boost_start_time = null;    
+      product.boost_end_time = null;
+      await this.productRepository.save(product);
+    }
+  }
 
    async updateProduct(id: number, updateDto: UpdateProductDto , user_id:string): Promise<{message:string,statusCode:number,data:Product}> {
     const product = await this.productRepository.findOne({ where: { id,user_id ,status:ProductStatus.AVAILABLE } });

@@ -18,7 +18,8 @@ export class Verification {
   @ApiProperty({ description: 'Indicates if the email is verified', default: false })
   @IsBoolean()
   is_email_verified: boolean;
-
+ 
+ 
      @OneToOne(() => User) // Assuming User entity exists
       @JoinColumn({ name: 'user_id' })
       @ApiProperty({ type: () => User })

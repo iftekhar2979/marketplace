@@ -22,7 +22,9 @@ export class OtpService {
   }
 
     async createOtp(userId: string,type:OtpType): Promise<Otp> {
-        const otp = this.generateOtp(4);
+   await this.otpRepository.delete({ user_id: userId });
+
+      const otp = this.generateOtp(4);
         const newOtp = this.otpRepository.create({
         otp,
         user_id: userId,
@@ -30,6 +32,7 @@ export class OtpService {
         expiresAt: new Date(Date.now() + 5 * 60 * 1000) 
         });
         // console.log(newOtp)
+        
     
         return await this.otpRepository.save(newOtp);
     }

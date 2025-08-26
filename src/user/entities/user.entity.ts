@@ -14,6 +14,7 @@ import {
 import { UserRoles } from "../enums/role.enum";
 import { Product } from "src/products/entities/products.entity";
 import { Favorite } from "src/favourites/entities/favourite.entity";
+import { ProductBoosts } from "src/product-boost/entities/product-boost.entity";
 // import { Verification } from "./verification.entity";
 
 
@@ -122,5 +123,9 @@ export class User {
   @OneToMany(() => Favorite, (favorite) => favorite.user)
   favorites: Favorite[]; 
 
+  @OneToMany(() => ProductBoosts, (boost) => boost.user)
+  boosts: ProductBoosts[];
+
 
 }
+ 

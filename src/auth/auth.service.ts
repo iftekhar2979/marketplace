@@ -30,6 +30,7 @@ import { Otp, OtpType } from "src/otp/entities/otp.entity";
 import { OtpVerificationDto } from "./dto/otp-verification.dto";
 import { OtpService } from "src/otp/otp.service";
 import { use } from "passport";
+import { Wallets } from "src/wallets/entity/wallets.entity";
 
 
 @Injectable()
@@ -61,6 +62,7 @@ export class AuthService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Verification) private verificationRepository:Repository<Verification>,
+    @InjectRepository(Wallets) private walletRepo:Repository<Wallets>,
     private readonly otpService:OtpService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
@@ -71,20 +73,16 @@ export class AuthService {
   }
   async signup(createUserDto: CreateUserDto, req: Request): Promise<{ user: User; token: string }> {
     this.logger.log(`Create and Save user with email ${createUserDto.email}`, AuthService.name);
-
     let { password } = createUserDto;
-    password = await argon2hash(password); // NOTE: Hash the password
-
+    password = await argon2hash(password); 
     try {
-      // NOTE: Generate user activating token
       const activateToken: string = tokenCreate();
-
       let user = this.userRepository.create({ ...createUserDto, password });
 
       user = await this.userRepository.save(user);
       this.logger.log("User Created", AuthService.name);
 
-      const verification = this.verificationRepository.insert({
+      await this.verificationRepository.insert({
         user_id:user.id,
         is_email_verified:false,
         is_deleted:false,
@@ -92,8 +90,14 @@ export class AuthService {
         status:AccountStatus.INACTIVE,
       })
     const otp =  await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
-      this.logger.log("Login the user and send the token and mail", AuthService.name); 
-      const token: string = await this.signTokenSendEmailAndSMS(user, req,otp.otp);
+    try{
+    const wal =  await this.walletRepo.insert({user_id:user.id,balance:0.00,version:1,user:user})
+console.log(wal)
+    }catch(err){
+      console.log(err)
+    }
+    this.logger.log("Login the user and send the token and mail", AuthService.name); 
+    const token: string = await this.signTokenSendEmailAndSMS(user, req,otp.otp);
 
       return { user, token };
     } catch (err) {
@@ -119,10 +123,8 @@ export class AuthService {
   }
   async OtpVerify(otpDto: OtpVerificationDto,userInfo:User) {
     const { otp,verification_type } = otpDto;
-
     this.logger.log("Creating Verification", AuthService.name);
     const verification = await this.otpService.findOtpByUserId(userInfo.id);
-console.log("VERIFICATION",verification)
        if (!verification) {
       throw new NotFoundException("OTP not found or expired");
     }
@@ -131,14 +133,12 @@ console.log("VERIFICATION",verification)
       throw new BadRequestException("Too many attempts, please request a new OTP");
     }
     if( verification.otp !== otp) {  
-      console.log(verification ,otp)
       await this.otpService.updateOtpAttempts(userInfo.id, verification.attempts + 1);
       throw new BadRequestException("Invalid OTP");
     }
     if( verification.type !== verification_type) { 
       throw new BadRequestException("Wrong Verification Request");
     }
-     // Check if the OTP exists and if it is still valid (i.e., not expired)
     if (!verification || (await verification).expiresAt < new Date()) {
       throw new NotFoundException("OTP expired");
     }
@@ -215,9 +215,6 @@ const { password, passwordConfirm } = resetPasswordDto;
     if (!token) throw new BadRequestException("Token Not Found");
 
     const { sub: userId, email, auth_time: loginTime } = this.jwtService.decode(token);
-
-    console.log("DECODED:", { userId, email, loginTime });
-
     return {
       user: { userId, email, loginTime },
       token,
@@ -226,27 +223,21 @@ const { password, passwordConfirm } = resetPasswordDto;
   
   async updateMyPassword(updateMyPassword: UpdateMyPasswordDto, user: User) {
     const { passwordCurrent, password, passwordConfirm } = updateMyPassword;
-
     this.logger.log("Verifying current password from user", AuthService.name);
     if (!(await argon2verify(user.password, passwordCurrent))) {
       throw new UnauthorizedException("Invalid password");
     }
-
     if (password === passwordCurrent) {
       throw new BadRequestException("New password and old password can not be same");
     }
-
     if (password !== passwordConfirm) {
       throw new BadRequestException("Password does not match with passwordConfirm");
     }
-
     this.logger.log("Masking Password", AuthService.name);
     const hashedPassword = await argon2hash(password);
     user.password = hashedPassword;
-
     this.logger.log("Saving Updated User", AuthService.name);
     await this.userRepository.save(user);
-
     this.logger.log("Sending password update mail", AuthService.name);
     this.mailService.sendPasswordUpdateEmail(user);
 
@@ -261,13 +252,25 @@ const { password, passwordConfirm } = resetPasswordDto;
     // TODO: Method to be implemented by developer
     throw new BadRequestException("Method not implemented.");
   }
+  async userNotAccepted({existingToken}:{existingToken:string}){
+      const payload = await this.jwtService.verify(existingToken);
+const token = await this.jwtService.sign({id:payload.id,verification_type:OtpType.REGISTRATION})
+const userinfo = await this.userRepository.findOne({where:{id:payload.id}});
+
+const otp = await this.otpService.createOtp(payload.id, OtpType.REGISTRATION);
+await this.mailService.sendUserConfirmationMail(userinfo, `${otp.otp}`);
+return token
+  }
 
   async signToken(user: any): Promise<string> {
-    console.log(user)
+    // console.log(user)
     const payload: JwtPayload = { id: user.id };
     this.logger.log("Signing token", AuthService.name);
 if(!user.firstName){
-  return user
+  // console.log(payload)
+  const payload = { id: user.id, verification_type: 'registration' };
+  
+  return this.jwtService.sign(payload);
 }
     return this.jwtService.sign(payload);
   }
@@ -282,12 +285,14 @@ if(!user.firstName){
 
     return token;
   }
-  async resendOtp({ user}:{ user?:any}) {
+  async resendOtp({ user ,otpType}:{ user?:any,otpType?:OtpType}) {
   
-    if(!user.verification_type) {
-       return await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
+    if(!user.verification_type || otpType === OtpType.REGISTRATION) {
+      const otp = await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
+       await this.mailService.sendUserConfirmationMail(user.email, `${otp.otp}`);
+     return { message: "OTP resent successfully", status: "success", data:null};
     }
-
+ 
     this.logger.log(`Resending OTP to user with ID: ${user.id}`, AuthService.name);
     const existingOtp = await this.otpService.findOtpByUserId(user.id);
     // console.log("Existing Otp",existingOtp.createdAt.getTime()+ 1 * 60 * 1000,Date.now())

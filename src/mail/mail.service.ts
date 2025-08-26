@@ -65,7 +65,7 @@ export class MailService {
     this.mailService.sendMail({
       from: { name: this.name, address: this.from },
       to: user.email,
-      subject: "",
+      subject: "Registation Confirmation",
       template: "welcome",
       context: {
         subject: "",

@@ -30,11 +30,9 @@ export class Delivery {
   @ApiProperty({ example: 101, description: 'Order ID associated with this delivery' })
   @Column()
   order_id: number;
-
   @ApiProperty({ example: 'uuid-of-buyer', description: 'User ID of the recipient (buyer)' })
   @Column()
   user_id: string;
-
   @ApiProperty({ example: 'pending', enum: DeliveryStatus, description: 'Current status of the delivery' })
   @Column({ type: 'enum', enum: DeliveryStatus, default: DeliveryStatus.PENDING })
   status: DeliveryStatus;
@@ -55,8 +53,6 @@ export class Delivery {
   @ApiProperty({ description: 'Timestamp when the delivery was last updated' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
-
-  // 👉 Relations
 
   @OneToOne(() => Order, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })

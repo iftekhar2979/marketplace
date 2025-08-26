@@ -9,28 +9,28 @@ export class DeliveryAddress {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column('varchar')
   forename: string;
 
-  @Column()
+  @Column('varchar')
   surname: string;
 
-  @Column()
+  @Column('varchar')
   emailAddress: string;
 
-  @Column()
+  @Column('varchar')
   companyName: string;
 
-  @Column()
+  @Column('varchar')
   addressLineOne: string;
 
-  @Column()
+  @Column('varchar')
   city: string;
 
-  @Column()
+  @Column('varchar')
   postcode: string;
 
-  @Column()
+  @Column('varchar')
   telephoneNumber: string;
   @ApiProperty({ example: '112', description: 'County Id' })
    @IsNumber()

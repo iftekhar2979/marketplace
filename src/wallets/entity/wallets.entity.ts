@@ -7,25 +7,26 @@ export class Wallets {
     @ApiProperty({example:1, description:"Unique Id for wallet"})
     @PrimaryGeneratedColumn()
     id:number
-
     @ApiProperty({ example: 'uuid-of-user', description: ' user ID' })
-      @Column()
-      user_id: string;
-
-       @OneToOne(() => User, { onDelete: 'CASCADE' })
-           @JoinColumn({ name: 'user_id' })
-          user: User;
- @ApiProperty({ example: 99.99, description: 'Offered price' })
-  @Column('decimal', { precision: 10, scale: 2 })
-  price: number;
- @ApiProperty({ example: 9, description: 'Wallet Version ' })
-  @Column('decimal', { precision: 1, scale: 1 })
-  version: number;
+    @Column()
+    user_id: string;
+    @OneToOne(() => User, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'user_id' })
+    user: User;
+    @ApiProperty({ example: 99.99, description: 'Offered price' })
+    @Column('float', { default:0})
+    balance: number; 
+    @ApiProperty({ example: "dollar", description: 'Currenty ' })
+    @Column('varchar', { default:"GBM" , nullable:true})
+    currency: string; 
+    @ApiProperty({ example: 9, description: 'Wallet Version ' })
+    @Column('int', { default:0})
+    version: number;
     @ApiProperty({ description: 'Timestamp when the offer was created' })
     @CreateDateColumn({ type: 'timestamp with time zone' })
     created_at: Date;
-      @ApiProperty({ description: 'Timestamp when the offer was last updated' })
-      @UpdateDateColumn({ type: 'timestamp with time zone' })
-      updated_at: Date;
+    @ApiProperty({ description: 'Timestamp when the offer was last updated' })
+    @UpdateDateColumn({ type: 'timestamp with time zone' })
+    updated_at: Date;
 
 }

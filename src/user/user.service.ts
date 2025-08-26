@@ -30,7 +30,6 @@ export class UserService {
     body.password = await argon2hash(body.password); 
     // console.log(body)
     const user = this.userRepository.insert(body); 
-
     return "Admin Created Successfully"
   }
 

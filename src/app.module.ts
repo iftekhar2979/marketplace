@@ -40,6 +40,11 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SocketModule } from './socket/socket.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { TransglobalModule } from './transglobal/transglobal.module';
+import { ScheduleModule } from "@nestjs/schedule";
+import { ProductBoostModule } from './product-boost/product-boost.module';
+// import { ProductBoostgService } from './product-boostg/product-boostg.service';
+import { StripeModule } from './stripe/stripe.module';
+import { StripController } from './strip/strip.controller';
 
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
@@ -57,6 +62,8 @@ import { TransglobalModule } from './transglobal/transglobal.module';
       validationSchema: envSchema,
       // validationOptions: { allowUnknown: false, abortEarly: true },
     }),
+
+
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -74,12 +81,13 @@ import { TransglobalModule } from './transglobal/transglobal.module';
       node: 'https://localhost:9200',
       auth: {
         username: 'elastic',
-        password: 'zLOt2va9_fUKmX0kN3xD',
+        password: 'zLOt2va9_fUKmX0kN3xD', 
       },
     tls:{
       rejectUnauthorized: false, // This is for development purposes only, do not use in production
     }
     }),
+    ScheduleModule.forRoot(), 
     WinstonModule.forRoot(winstonLoggerConfig),
     PostgreSQLDatabaseModule,
     AuthModule,
@@ -109,9 +117,11 @@ import { TransglobalModule } from './transglobal/transglobal.module';
     SocketModule,
     ReviewsModule,
     TransglobalModule,
+    ProductBoostModule,
+    StripeModule,
   
   ],
-  controllers: [AppController],
+  controllers: [AppController, StripController],
   providers: [
     AppService,
     {
@@ -119,6 +129,7 @@ import { TransglobalModule } from './transglobal/transglobal.module';
       useClass: ThrottlerGuard,
     },
     WithdrawsService,
+    // ProductBoostgService,
   ],
 })
 export class AppModule implements NestModule {

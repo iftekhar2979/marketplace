@@ -61,6 +61,9 @@ export class CreateProductDto {
   @ApiProperty({ description: 'Is negotiable (true or false)', example: 'true' })
   @IsBooleanString()
   is_negotiable: string;
+  @ApiProperty({ description: 'Is Boosted (true or false)', example: 'true' })
+  @IsBooleanString()
+  is_boosted: string;
 
   @ApiProperty({ description: 'Size', example: 'Medium' })
   @IsString()

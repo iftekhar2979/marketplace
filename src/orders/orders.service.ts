@@ -14,7 +14,7 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 export class OrdersService {
     constructor(
         @InjectRepository(Order) private orderRepository: Repository<Order>,
-    private readonly notificaionService:NotificationsService
+        private readonly notificaionService:NotificationsService
       ){}
 async createOrderFromOffer(offer: Offer): Promise<Order> {
   // console.log("Offer ID:", offer);

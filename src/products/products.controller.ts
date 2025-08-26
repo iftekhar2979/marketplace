@@ -40,6 +40,7 @@ constructor(private readonly productsService: ProductsService) {}
     @GetFilesDestination() filesDestination: string[],
   ) {
     createProductDto.images = filesDestination;
+    // if(createProductDto)
     return this.productsService.create(createProductDto, user);
   }
 
@@ -64,7 +65,7 @@ constructor(private readonly productsService: ProductsService) {}
       throw new ForbiddenException("Can't resolve the api")
     }
     query.userId = user.id
-    console.log(query)
+    // console.log(query)
     return this.productsService.findAllWithFilters(query);
   }
  @Put(':id')

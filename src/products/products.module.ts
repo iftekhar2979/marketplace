@@ -8,9 +8,10 @@ import { ProductImage } from './entities/productImage.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { Wallets } from 'src/wallets/entity/wallets.entity';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([Product, ProductImage]), AuthModule,UserModule,NotificationsModule],
+  imports:[TypeOrmModule.forFeature([Product, ProductImage,Wallets]), AuthModule,UserModule,NotificationsModule,],
   controllers: [ProductsController],
   providers: [ProductsService],
   exports:[ProductsService]
