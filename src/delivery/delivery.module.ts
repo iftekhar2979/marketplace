@@ -11,10 +11,12 @@ import { Order } from 'src/orders/entities/order.entity';
 import { OrderInvoice } from './entities/shipment_order_invoice.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersModule } from 'src/orders/orders.module';
+import { DeliveryAddress } from './entities/delivery_information.entity';
+import { CollectionAddress } from './entities/collection_Address.entity';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([Shipment,Delivery,ShipmentDocument,Label,OrderInvoice]),
+    TypeOrmModule.forFeature([Shipment,Delivery,ShipmentDocument,Label,OrderInvoice,DeliveryAddress,CollectionAddress]),
     OrdersModule
   ],
   controllers: [DeliveryController],

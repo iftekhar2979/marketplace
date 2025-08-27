@@ -21,7 +21,7 @@ import { runMigrations } from "./migration-runner";
 import { join } from "path";
 import { loadSecretsFromAWS } from "./configs/app.config";
 import { SeederService } from "./seeder/seeder.service";
-
+import dns from 'node:dns'
 /**
  * function for bootstraping the nest application
  */
@@ -40,8 +40,6 @@ async function bootstrap() {
     logger: ["error", "fatal", "log", "verbose", "warn", "debug",]
   });
   const configService = app.get<ConfigService>(ConfigService);
-  // const expressApp = app.getHttpAdapter() as unknown as express.Application;
-
     const seederService = app.get(SeederService);
   // await seederService.seedData()
   await seederService.seedAdminUser();

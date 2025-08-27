@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Wallets } from './entity/wallets.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +7,8 @@ import { Transections } from 'src/transections/entity/transections.entity';
 import { TransectionType } from 'src/transections/enums/transectionTypes';
 import { PaymentStatus } from 'src/orders/enums/orderStatus';
 import { ResponseInterface } from 'src/common/types/responseInterface';
+import { InjectLogger } from 'src/shared/decorators/logger.decorator';
+import { Logger } from 'winston';
 
 @Injectable()
 export class WalletsService {
@@ -15,6 +17,8 @@ private readonly dataSource: DataSource,
 @InjectRepository(Wallets) private readonly walletRepository: Repository<Wallets>,
 // @InjectRepository(User) private readonly userRepository: Repository<User>,
 @InjectRepository(Transections) private readonly transectionRepository: Repository<Transections>,
+
+    @InjectLogger() private readonly logger: Logger
     ) {}
         
   // Wallet Recharge Service
@@ -61,8 +65,9 @@ private readonly dataSource: DataSource,
 }
 
 async getWalletByUserId(userId:string):Promise<ResponseInterface<Wallets>>{
-  console.log(userId)
+  // console.log(userId)
   const wallet = await this.walletRepository.findOne({where:{user_id:userId}});
+  // this.logger.error("Balance detect",wallet.balance)
   if(!wallet){
     throw new NotFoundException('Wallet not found');
   }

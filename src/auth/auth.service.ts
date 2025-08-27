@@ -92,7 +92,7 @@ export class AuthService {
     const otp =  await this.otpService.createOtp(user.id, OtpType.REGISTRATION);
     try{
     const wal =  await this.walletRepo.insert({user_id:user.id,balance:0.00,version:1,user:user})
-console.log(wal)
+// console.log(wal)
     }catch(err){
       console.log(err)
     }
@@ -249,7 +249,6 @@ const { password, passwordConfirm } = resetPasswordDto;
 
 
   async deleteMyAccount(user: User): Promise<boolean> {
-    // TODO: Method to be implemented by developer
     throw new BadRequestException("Method not implemented.");
   }
   async userNotAccepted({existingToken}:{existingToken:string}){

@@ -14,10 +14,10 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 export class OrdersService {
     constructor(
         @InjectRepository(Order) private orderRepository: Repository<Order>,
-        private readonly notificaionService:NotificationsService
+        private readonly notificaionService:NotificationsService ,
+        
       ){}
 async createOrderFromOffer(offer: Offer): Promise<Order> {
-  // console.log("Offer ID:", offer);
  try{
   if (offer.order_id) {
     throw new BadRequestException('Order already exists for this offer');
@@ -135,6 +135,7 @@ async findBySellerId(
     take: limit,
     order: { created_at: 'DESC' },
   });
+// orsers
 
   return {
     message: 'Orders retrieved successfully!',
@@ -145,5 +146,13 @@ async findBySellerId(
     }
 
     
+}
+
+async purchaseOrder(){
+  try{
+
+  }catch(error){
+
+  }
 }
 }

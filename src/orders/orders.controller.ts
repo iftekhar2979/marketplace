@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from 'src/user/entities/user.entity';
@@ -10,7 +10,6 @@ export class OrdersController {
 constructor(private readonly ordersService: OrdersService) {}
 
   @Get('phurcases')
-
   @UseGuards(JwtAuthenticationGuard)
   getOrdersByBuyer(@GetUser() user:User, @Query('page') page = 1,
     @Query('limit') limit = 10,) {
@@ -23,4 +22,11 @@ constructor(private readonly ordersService: OrdersService) {}
     return this.ordersService.findBySellerId(user.id,page , limit)
   }
 
+
+  @Post(':id/purchases')
+  @UseGuards(JwtAuthenticationGuard)
+  phurcase(@GetUser() user:User, @Query('page') page = 1,
+    @Query('limit') limit = 10,) {
+    return this.ordersService.findByBuyerId(user.id,page,limit)
+  }
 }

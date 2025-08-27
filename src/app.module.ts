@@ -44,8 +44,13 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { ProductBoostModule } from './product-boost/product-boost.module';
 // import { ProductBoostgService } from './product-boostg/product-boostg.service';
 import { StripeModule } from './stripe/stripe.module';
-import { StripController } from './strip/strip.controller';
-
+// import { StripController } from './strip/strip.controller';
+import { RedisModule } from './redis/redis.module';
+import { CacheModule } from "@nestjs/cache-manager";
+import * as redisStore from 'cache-manager-ioredis';
+// import { BullQueueProcessor } from './bull-queue.processor';
+import { BullModule } from '@nestjs/bull';
+import { BullQueueProcessor } from "./bull/bull.queue-processor";
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
  *
@@ -56,6 +61,26 @@ import { StripController } from './strip/strip.controller';
  */
 @Module({
   imports: [
+  CacheModule.register({
+      isGlobal: true,
+      store: redisStore,
+      prefix: '', 
+      host: process.env.REDIS_IP || 'localhost', // Use environment variable or default to localhost
+      port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379, // Use environment variable or default to 6379
+      ttl: 600,        
+      max: 100, 
+    }),
+
+     BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_IP || 'localhost',  // Use environment variable for Redis connection
+        port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,  // Default Redis port
+      },
+    }),
+    BullModule.registerQueue({
+      name: 'myQueue',  // Name of your queue
+    }),
+
     ConfigModule.forRoot({
       envFilePath: [`.env.stage.dev`],
       isGlobal: true,
@@ -119,9 +144,11 @@ import { StripController } from './strip/strip.controller';
     TransglobalModule,
     ProductBoostModule,
     StripeModule,
+    RedisModule,
+    BullModule,
   
   ],
-  controllers: [AppController, StripController],
+  controllers: [AppController],
   providers: [
     AppService,
     {
@@ -129,6 +156,7 @@ import { StripController } from './strip/strip.controller';
       useClass: ThrottlerGuard,
     },
     WithdrawsService,
+    BullQueueProcessor
     // ProductBoostgService,
   ],
 })

@@ -46,8 +46,6 @@ export class Order {
  @OneToOne(() => Product, { onDelete: 'CASCADE' })
 @JoinColumn({ name: 'product_id' })
 product: Product;
-
-
   // 💬 Accepted Offer
   @OneToOne(() => Offer, (offer) => offer.order, { cascade: true })
   @JoinColumn({ name: 'offer_id' })
@@ -84,4 +82,7 @@ product: Product;
   @ApiProperty({ description: 'Updated at' })
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: Date;
+}
+export class NewOrders extends Order{
+  faisal:string
 }

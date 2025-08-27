@@ -18,10 +18,6 @@ import { Transections } from 'src/transections/entity/transections.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WalletsService } from 'src/wallets/wallets.service';
 import { Wallets } from 'src/wallets/entity/wallets.entity';
-// import { Product } from './entities/product.entity';
-// import { CreateProductDto } from './dto/create-product.dto';
-// import { UpdateProductDto } from './dto/update-product.dto';
-// import { ProductImage } from '../product-image/entities/product-image.entity';
 
 @Injectable()
 export class ProductsService {
@@ -35,7 +31,6 @@ export class ProductsService {
     @InjectRepository(Wallets)
     private readonly walletsRepo: Repository<Wallets>,
     private readonly notificationService: NotificationsService,
-    // private readonly walletService: WalletsService
   ) {}
 // async getProductById({product_id,status,}){
 
@@ -396,6 +391,8 @@ const product = await this.getProduct(id)
     const isFavorite = product.favorites.some(
       (favorite) => favorite.user.id === userId
     );
+    const productImage = await this.productImageRepository.find({where:{id:product.id}})
+    product.images = productImage
 delete product.favorites
 
     // Return product with favorite status (true or false) and associated images
