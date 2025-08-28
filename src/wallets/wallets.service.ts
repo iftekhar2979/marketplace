@@ -9,6 +9,9 @@ import { PaymentStatus } from 'src/orders/enums/orderStatus';
 import { ResponseInterface } from 'src/common/types/responseInterface';
 import { InjectLogger } from 'src/shared/decorators/logger.decorator';
 import { Logger } from 'winston';
+import { BullQueueEvent, BullQueueEvents, InjectQueue } from '@nestjs/bull';
+import Bull from 'bull';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class WalletsService {
@@ -17,7 +20,7 @@ private readonly dataSource: DataSource,
 @InjectRepository(Wallets) private readonly walletRepository: Repository<Wallets>,
 // @InjectRepository(User) private readonly userRepository: Repository<User>,
 @InjectRepository(Transections) private readonly transectionRepository: Repository<Transections>,
-
+// @InjectQueue('wallet_queue') private bullQueue: Queue,
     @InjectLogger() private readonly logger: Logger
     ) {}
         
@@ -67,6 +70,8 @@ private readonly dataSource: DataSource,
 async getWalletByUserId(userId:string):Promise<ResponseInterface<Wallets>>{
   // console.log(userId)
   const wallet = await this.walletRepository.findOne({where:{user_id:userId}});
+  // const bul = await this.bullQueue.add('Added',wallet)
+  // console.log(bul)
   // this.logger.error("Balance detect",wallet.balance)
   if(!wallet){
     throw new NotFoundException('Wallet not found');

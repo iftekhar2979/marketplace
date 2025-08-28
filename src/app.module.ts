@@ -51,6 +51,7 @@ import * as redisStore from 'cache-manager-ioredis';
 // import { BullQueueProcessor } from './bull-queue.processor';
 import { BullModule } from '@nestjs/bull';
 import { BullQueueProcessor } from "./bull/bull.queue-processor";
+import { UserlogsModule } from './userlogs/userlogs.module';
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
  *
@@ -146,6 +147,7 @@ import { BullQueueProcessor } from "./bull/bull.queue-processor";
     StripeModule,
     RedisModule,
     BullModule,
+    UserlogsModule,
   
   ],
   controllers: [AppController],

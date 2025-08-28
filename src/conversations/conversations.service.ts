@@ -62,7 +62,6 @@ return await this.conversationRepo.save(conversation);
       }
 
     }
-    console.log("Is the conversation",conversation)
 return await this.conversationRepo.save(chat);
 
   }

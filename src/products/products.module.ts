@@ -9,9 +9,15 @@ import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { Wallets } from 'src/wallets/entity/wallets.entity';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([Product, ProductImage,Wallets]), AuthModule,UserModule,NotificationsModule,],
+  imports:[
+    TypeOrmModule.forFeature([Product, ProductImage,Wallets]), 
+  AuthModule,
+  UserModule,
+  NotificationsModule,
+  BullModule.registerQueue({name:"product"})],
   controllers: [ProductsController],
   providers: [ProductsService],
   exports:[ProductsService]

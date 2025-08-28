@@ -31,7 +31,7 @@ export class RedisService implements OnModuleInit{
     await this.cacheManager.del(key);
   }
   async invalidCacheList(keys: string[]): Promise<void> {
-    this.logger.log("Cache Invalided",keys)
+    this.logger.log("Cache Invalided",keys) 
     for( let key of keys){
         await this.cacheManager.del(key)
     }

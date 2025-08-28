@@ -41,7 +41,6 @@ async function bootstrap() {
   });
   const configService = app.get<ConfigService>(ConfigService);
     const seederService = app.get(SeederService);
-  // await seederService.seedData()
   await seederService.seedAdminUser();
   app.use('/api/v1/stripe/webhook', raw({ type: "*/*" })),
   app.setGlobalPrefix("/api");
@@ -125,8 +124,8 @@ async function bootstrap() {
       permittedCrossDomainPolicies: { permittedPolicies: "none" }, // Prevents Adobe Flash and Acrobat from loading cross-domain data.
       referrerPolicy: { policy: "no-referrer" }, // Protects against referrer leakage.
       xssFilter: true, // Enables the basic XSS protection in older browsers.
-      // Configures Cross-Origin settings to strengthen resource isolation and mitigate certain side-channel attacks.
-      crossOriginEmbedderPolicy: true,
+    
+      // Configures Cross-Origin settings to strengthen resource isolation and mitigate certain side-channel attacks.  crossOriginEmbedderPolicy: true,
       crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
       crossOriginResourcePolicy: { policy: "same-site" },
       originAgentCluster: true,

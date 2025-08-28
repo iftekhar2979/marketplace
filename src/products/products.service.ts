@@ -18,6 +18,8 @@ import { Transections } from 'src/transections/entity/transections.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WalletsService } from 'src/wallets/wallets.service';
 import { Wallets } from 'src/wallets/entity/wallets.entity';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class ProductsService {
@@ -26,6 +28,7 @@ export class ProductsService {
     private readonly productRepository: Repository<Product>,
 
      private readonly dataSource: DataSource, 
+     @InjectQueue("product") private readonly queue:Queue ,
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
     @InjectRepository(Wallets)
@@ -117,6 +120,10 @@ const boostDays = 3
 
       // Handle images if any
       if (createProductDto.images && Array.isArray(createProductDto.images)) {
+
+         await this.queue.add("Product-image",createProductDto.images,{
+          attempts:10,
+         })
         const productImages = createProductDto.images.map((imgUrl: string) => {
           const img = new ProductImage();
           img.image = imgUrl;
