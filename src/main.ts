@@ -11,7 +11,7 @@ import hpp from "hpp";
 import { json, raw, urlencoded } from "express";
 import { ConfigService } from "@nestjs/config"; 
 import { AppModule } from "./app.module";
-import { NestExpressApplication } from "@nestjs/platform-express";
+import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express";
 import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 import { expressSession } from "./session-management";
 // FIXME: have it if you are using secret manager
@@ -22,6 +22,7 @@ import { join } from "path";
 import { loadSecretsFromAWS } from "./configs/app.config";
 import { SeederService } from "./seeder/seeder.service";
 import dns from 'node:dns'
+
 /**
  * function for bootstraping the nest application
  */
@@ -49,6 +50,7 @@ async function bootstrap() {
     type: VersioningType.URI,
   });
 
+
   const corsOptions: CorsOptions = {
     // FIXME:
     origin: ["http://localhost:3000"], // Only allow requests from yourdomain.com
@@ -59,8 +61,6 @@ async function bootstrap() {
     maxAge: 86400, // Cache the preflight response for 24 hours (in seconds)
   };
   app.useStaticAssets(join(__dirname, '..','..', 'public'));
-  console.log("Static assets served from:", join(__dirname, '..','..', 'public'));
-
   app.enableCors(corsOptions);
   app.use(cookieParser());
   app.use(compression());

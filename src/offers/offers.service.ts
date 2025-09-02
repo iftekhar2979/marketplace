@@ -12,7 +12,6 @@ import { ConversationsService } from "src/conversations/conversations.service";
 import { NotificationsService } from "src/notifications/notifications.service";
 import { NotificationAction, NotificationRelated } from "src/notifications/entities/notifications.entity";
 import { UserRoles } from "src/user/enums/role.enum";
-import { MessagesService } from "src/messages/messages.service";
 
 @Injectable()
 export class OfferService {

@@ -99,7 +99,6 @@ export class Product {
   description: string;
 
  
-
   @ApiProperty({ example: 'Used - Like New', description: 'Condition of the product' })
   @IsString()
   @MinLength(2)

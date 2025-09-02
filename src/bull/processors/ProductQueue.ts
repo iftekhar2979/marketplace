@@ -9,28 +9,35 @@ import * as path from 'path';  // Path module for handling file paths
 @Injectable()
 export class ImageProcessor {
   @Process('Product-image')  // Listen for jobs of type 'Product-image'
-  async handleImageJob(job: Job) {
-    const images = job.data;  
-    console.log(images)
-    const outputDir = path.join(__dirname, 'processed-images');
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir);  
-    }
-    for (const imgUrl of images) {
-      const outputImagePath = path.join(outputDir, `processed_${path.basename(imgUrl)}`);
+ async handleImageJob(job: Job) {
+  console.log("Job Processing");
+  const images = job.data;
+  console.log(__dirname);
 
-      // Use sharp to resize or process the image
-      await sharp(imgUrl)
-        .resize(300, 300)  // Resize image to 300x300 (example)
-        .toFile(outputImagePath, async (err, info) => {
-          if (err) {
-            console.error(`Error processing image: ${imgUrl}`, err);
-            return;
-          }
+  const projectRoot =  path.join(__dirname, "..","..","..","..",'public');// go back to project root
+  const outputDir = path.join(projectRoot, "uploads");
+  // const uploadDir = path.join(projectRoot, "uploads");
 
-          console.log(`Image processed successfully: ${outputImagePath}`, info);
+  console.log("OutputDir:", outputDir);
 
-        });
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  for (const imgUrl of images) {
+    const absoluteInputPath = path.join(projectRoot, imgUrl); // make absolute
+    const outputImagePath = path.join(projectRoot, path.basename(imgUrl)); // overwrite with same name
+      const tempPath = absoluteInputPath + ".tmp";
+    try {
+      await sharp(absoluteInputPath)
+        .resize(800, 800)
+        .toFile(tempPath);
+fs.renameSync(tempPath, absoluteInputPath);
+      console.log(`Image replaced successfully: ${outputImagePath}`);
+    } catch (err) {
+      console.error(`Error processing image: ${absoluteInputPath}`, err);
     }
   }
+}
+
 }

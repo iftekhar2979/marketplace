@@ -2,7 +2,7 @@ import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Injectable } from '@nestjs/common';
 
-@Processor('myQueue')  // Use the same name as the registered queue
+@Processor('Product-image')  // Use the same name as the registered queue
 @Injectable()
 export class BullQueueProcessor { 
 
