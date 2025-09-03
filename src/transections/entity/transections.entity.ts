@@ -3,7 +3,7 @@ import { Order } from "src/orders/entities/order.entity";
 import { PaymentStatus } from "src/orders/enums/orderStatus";
 import { User } from "src/user/entities/user.entity";
 import { Wallets } from "src/wallets/entity/wallets.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { TransectionType } from "../enums/transectionTypes";
 import { Product } from "src/products/entities/products.entity";
 
@@ -32,17 +32,17 @@ export class Transections {
       transection_type: TransectionType;
       @ApiProperty({ example: 'Transection id', description: ' Transection Id Of Payments' })
       @Column()
-      transectionId:string;
+      paymentId:string;
       @ApiProperty({ example: 'Payment Methods ', description: ' Payments Methods' })
       @Column()
       paymentMethod:string;
       @ApiProperty({ example: PaymentStatus.COMPLETED, description: ' Payments Methods' })
       @Column()
       status:PaymentStatus;
-       @OneToOne(() => User, { onDelete: 'CASCADE' })
+       @ManyToOne(() => User, { onDelete:'CASCADE'})
        @JoinColumn({ name: 'user_id' }) 
         user: User;
-       @OneToOne(() => Wallets, { onDelete: 'CASCADE' })
+       @ManyToOne(() => Wallets, { onDelete: 'CASCADE' })
        @JoinColumn({ name: 'wallet_id' })
         wallet: Wallets;
        @OneToOne(() => Order, { onDelete: 'CASCADE' , nullable:true  })

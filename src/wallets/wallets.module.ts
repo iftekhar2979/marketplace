@@ -11,13 +11,15 @@ import { Transections } from 'src/transections/entity/transections.entity';
 import { ProductsModule } from 'src/products/products.module';
 import { Order } from 'src/orders/entities/order.entity';
 import { BullModule } from '@nestjs/bull';
+import { StripeModule } from 'src/stripe/stripe.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Wallets,ProductBoosts,Transections , Order,Product]),
     BullModule.registerQueue({name:'wallet_queue'}),
     UserModule ,
-    ProductsModule
+    ProductsModule, 
+    StripeModule
   ],
   controllers: [WalletsController],
   providers: [WalletsService],

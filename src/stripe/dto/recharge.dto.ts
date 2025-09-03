@@ -7,8 +7,8 @@ export class RechargeDto{
     amount: number
     @IsString()
     @MinLength(5,{message:"Transection Id should has minimum 5 charachters"})
-    @MaxLength(15,{message:"Transection Id should has Maximum 15 charachters"})
-    transectionId: string
+    @MaxLength(30,{message:"Transection Id should has Maximum 15 charachters"})
+    paymentId: string
     @IsString()
     paymentMethod: 'stripe' | 'revenuecat'
 }

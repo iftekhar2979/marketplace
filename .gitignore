@@ -2,10 +2,11 @@
 /dist
 /docs
 /node_modules
-
+/public/uploads
 # files
 # NOTE: Un-comment this in real projects
 # .env*
+
 
 .env.stage.dev
 .env.stage.test

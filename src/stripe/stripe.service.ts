@@ -80,4 +80,14 @@ export class StripeService {
     }
     return session.metadata;
   }
+  async getPaymentIntent(paymentIntend:string){
+   const paymentIntent = await this.stripe.paymentIntents.retrieve(
+  paymentIntend
+);
+return paymentIntent
+  }
+  async paymentIntentList(){
+   const paymentIntent = await this.stripe.paymentIntents.list({limit:10})
+return paymentIntent
+  }
 }

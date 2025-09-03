@@ -11,15 +11,10 @@ export class ImageProcessor {
   @Process('Product-image')  // Listen for jobs of type 'Product-image'
  async handleImageJob(job: Job) {
   console.log("Job Processing");
+  console.time()
   const images = job.data;
-  console.log(__dirname);
-
   const projectRoot =  path.join(__dirname, "..","..","..","..",'public');// go back to project root
   const outputDir = path.join(projectRoot, "uploads");
-  // const uploadDir = path.join(projectRoot, "uploads");
-
-  console.log("OutputDir:", outputDir);
-
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -32,8 +27,9 @@ export class ImageProcessor {
       await sharp(absoluteInputPath)
         .resize(800, 800)
         .toFile(tempPath);
-fs.renameSync(tempPath, absoluteInputPath);
+      fs.renameSync(tempPath, absoluteInputPath);
       console.log(`Image replaced successfully: ${outputImagePath}`);
+      console.timeEnd()
     } catch (err) {
       console.error(`Error processing image: ${absoluteInputPath}`, err);
     }

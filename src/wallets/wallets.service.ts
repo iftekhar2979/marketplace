@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Wallets } from './entity/wallets.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,30 +9,42 @@ import { PaymentStatus } from 'src/orders/enums/orderStatus';
 import { ResponseInterface } from 'src/common/types/responseInterface';
 import { InjectLogger } from 'src/shared/decorators/logger.decorator';
 import { Logger } from 'winston';
-import { BullQueueEvent, BullQueueEvents, InjectQueue } from '@nestjs/bull';
-import Bull from 'bull';
-import { Queue } from 'bullmq';
+
+import { StripeService } from 'src/stripe/stripe.service';
 
 @Injectable()
 export class WalletsService {
     constructor(
+      // private stripe: Stripe,
 private readonly dataSource: DataSource, 
 @InjectRepository(Wallets) private readonly walletRepository: Repository<Wallets>,
-// @InjectRepository(User) private readonly userRepository: Repository<User>,
 @InjectRepository(Transections) private readonly transectionRepository: Repository<Transections>,
-// @InjectQueue('wallet_queue') private bullQueue: Queue,
-    @InjectLogger() private readonly logger: Logger
-    ) {}
+    @InjectLogger() private readonly logger: Logger ,
+    private readonly stripeService:StripeService
+  ) {
+    }
         
   // Wallet Recharge Service
-  async rechargeWallet({userId,amount,paymentMethod,transectionId}:{userId: string; amount: number; paymentMethod: string; transectionId: string}){
+  async rechargeWallet({userId,amount,paymentMethod,paymentId}:{userId: string; amount: number; paymentMethod: string; paymentId: string}){
     if (amount <= 0) {
       throw new BadRequestException('Amount must be greater than zero');
     }
+ 
+    const paymentInfo = await this.stripeService.getPaymentIntent(paymentId)
+  
+    if(paymentInfo.amount_received !== amount){
+      throw new BadGatewayException("Payment Intent and amount is not correct")
+    }
+    
+// console.log(paymentIntent)
     // Start a transaction to ensure data integrity
     const queryRunner = this.walletRepository.manager.connection.createQueryRunner();
     await queryRunner.startTransaction();
     try {
+      const transectionExist = await this.transectionRepository.findOne({where:{paymentId}})
+      if(transectionExist){
+        throw new BadRequestException("Payment already received with that payment Id")
+      }
       const wallet = await queryRunner.manager.findOne(Wallets, { where: { user_id: userId } });
       if (!wallet) {
         throw new NotFoundException('Wallet not found');
@@ -41,12 +53,12 @@ private readonly dataSource: DataSource,
       wallet.balance += amount;
       await queryRunner.manager.save(Wallets, wallet);
 
-      // Record the transaction
+      // Record the transaction 
       const transection = new Transections();
       transection.user_id = userId;
       transection.amount = amount;
       transection.transection_type = TransectionType.RECHARGE; // Credit for recharge
-      transection.transectionId = transectionId;
+      transection.paymentId = paymentId;
       transection.paymentMethod = paymentMethod;
       transection.status = PaymentStatus.COMPLETED;
       transection.wallet_id = wallet.id;
@@ -56,8 +68,9 @@ private readonly dataSource: DataSource,
       // Commit the transaction
       await queryRunner.commitTransaction();
 
-      return { message: 'Wallet recharged successfully', balance: wallet.balance };
+      return { message: 'Wallet recharged successfully',balance: wallet.balance };
     } catch (error) {
+      console.log(error)
       // If any error occurs, rollback the transaction
       await queryRunner.rollbackTransaction();
       throw error;
@@ -79,7 +92,7 @@ async getWalletByUserId(userId:string):Promise<ResponseInterface<Wallets>>{
   return { message:"wallets retrived successfully",status:'success',statusCode:200,data:wallet};
 }
   // Wallet Withdraw Service
-  async withdrawFromWallet(userId: string, amount: number, transectionId: string, paymentMethod: string): Promise<any> {
+  async withdrawFromWallet(userId: string, amount: number, paymentId: string, paymentMethod: string): Promise<any> {
     if (amount <= 0) {
       throw new BadRequestException('Amount must be greater than zero');
     }
@@ -102,7 +115,7 @@ async getWalletByUserId(userId:string):Promise<ResponseInterface<Wallets>>{
       transection.user_id = userId;
       transection.amount = amount;
       transection.transection_type = TransectionType.WITHDRAW; // Debit for withdrawal
-      transection.transectionId = null;
+      transection.paymentId = null;
       transection.paymentMethod = paymentMethod;
       transection.status = PaymentStatus.PENDING;
       transection.wallet_id = wallet.id;

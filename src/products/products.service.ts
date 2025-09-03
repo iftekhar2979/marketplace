@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, EntityManager, ILike, In, LessThan, LessThanOrEqual, Repository } from 'typeorm';
 import { FavouriteProduct, Product } from './entities/products.entity';
@@ -71,7 +71,8 @@ if(status === ProductStatus.SOLD) {
     }
     if(createProductDto.is_boosted){
       if(wallets.balance === 0 || wallets.balance <= 10){
-        throw new BadRequestException("You should have minimum 10 balance in your wallet to boost a product")
+        throw new ForbiddenException("You should have minimum 10 balance in your wallet to boost a product")
+        
       }
     }
      const sellingPrice = parseFloat(createProductDto.selling_price);

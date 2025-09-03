@@ -53,6 +53,7 @@ import { BullModule } from '@nestjs/bull';
 import { BullQueueProcessor } from "./bull/bull.queue-processor";
 import { UserlogsModule } from './userlogs/userlogs.module';
 import { ImageProcessor } from "./bull/processors/ProductQueue";
+import { GeminiModule } from './gemini/gemini.module';
 /**
  * It is the root module for the application in we import all feature modules and configure modules and packages that are common in feature modules. Here we also configure the middlewares.
  *
@@ -149,6 +150,7 @@ import { ImageProcessor } from "./bull/processors/ProductQueue";
     RedisModule,
     BullModule,
     UserlogsModule,
+    GeminiModule,
   
   ],
   controllers: [AppController],

@@ -15,22 +15,22 @@ export class StripeController {
       constructor(
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
-    private readonly walletService: WalletsService
+    // private readonly walletService: WalletsService
   ) {}
 
-    @Post('payment')
-  @UseGuards(JwtAuthenticationGuard)
-  async createPaymentIntent(
-    @GetUser() user : User,
-    @Body() body:RechargeDto
-  ) {
-    const {  amount } = body;
-    const paymentIntent = await this.stripeService.createPaymentIntent(
-      amount,
-      user,
-    );
-    return { paymentIntent };
-  }
+  //   @Post('payment')
+  // @UseGuards(JwtAuthenticationGuard)
+  // async createPaymentIntent(
+  //   @GetUser() user : User,
+  //   @Body() body:RechargeDto
+  // ) {
+  //   const {  amount } = body;
+  //   const paymentIntent = await this.stripeService.createPaymentIntent(
+  //     amount,
+  //     user,
+  //   );
+  //   return { paymentIntent };
+  // }
 
   // Webhook handler for Stripe events
   @Post('webhook')

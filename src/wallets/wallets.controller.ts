@@ -24,9 +24,10 @@ export class WalletsController {
   async rechargeWallet(
     @GetUser() user: User,
     @Body() rechargeDto: RechargeDto
-  ): Promise<any> {
+  ): Promise<ResponseInterface<{balance}>> {
     try {
-      return {status:"success", statusCode:201,data: await this.walletsService.rechargeWallet({userId:user.id, amount: rechargeDto.amount , paymentMethod:rechargeDto.paymentMethod, transectionId:rechargeDto.transectionId})}
+      const payment =await this.walletsService.rechargeWallet({userId:user.id, amount: rechargeDto.amount , paymentMethod:rechargeDto.paymentMethod, paymentId:rechargeDto.paymentId})
+      return {status:"success", statusCode:201,message:payment.message, data:payment }
     } catch (error) {
       throw new BadRequestException(error.response || error.message);
     }
