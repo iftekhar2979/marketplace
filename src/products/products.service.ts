@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, EntityManager, ILike, In, LessThan, LessThanOrEqual, Repository } from 'typeorm';
 import { FavouriteProduct, Product } from './entities/products.entity';
@@ -20,6 +20,9 @@ import { WalletsService } from 'src/wallets/wallets.service';
 import { Wallets } from 'src/wallets/entity/wallets.entity';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { UserBehaviourService } from 'src/user-behaviour/user-behaviour.service';
+import { TransectionType } from 'src/transections/enums/transectionTypes';
+import { PaymentStatus } from 'src/orders/enums/orderStatus';
 
 @Injectable()
 export class ProductsService {
@@ -28,12 +31,16 @@ export class ProductsService {
     private readonly productRepository: Repository<Product>,
 
      private readonly dataSource: DataSource, 
-     @InjectQueue("product") private readonly queue:Queue ,
+    @InjectQueue("product") private readonly queue:Queue ,
+    //  @InjectQueue("behaviour") private readonly userBehaviour:Queue ,
+    private readonly userBehaviourService:UserBehaviourService,
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
     @InjectRepository(Wallets)
     private readonly walletsRepo: Repository<Wallets>,
     private readonly notificationService: NotificationsService,
+
+@InjectRepository(Transections) private readonly transectionRepository: Repository<Transections>,
   ) {}
 // async getProductById({product_id,status,}){
 
@@ -84,6 +91,7 @@ if(status === ProductStatus.SOLD) {
   const isBoosted = createProductDto.is_boosted.toLowerCase() === 'true';
   // const id_address_residential = createProductDto.is_address_residential.toLocaleLowerCase() === 'true';
 const boostDays = 3
+const productBoostingCost = 1
   // Validate that numeric values are valid
   if (isNaN(sellingPrice) || isNaN(purchasingPrice) || isNaN(quantity) ) {
     throw new BadRequestException('Invalid numeric values for price, quantity, or dimensions');
@@ -113,15 +121,25 @@ const boostDays = 3
       product.boost_end_time = isBoosted ? new Date(Date.now() + boostDays * 24 * 60 * 60 * 1000) : null; // 7 days boost
 
       if(createProductDto.is_boosted){
-        wallets.balance -= 3
+        wallets.balance -= productBoostingCost
         wallets.version += 1
-   await queryRunner.manager.save(Wallets, wallets)
-      }
+        const transection = new Transections()
+        transection.amount = productBoostingCost
+        transection.paymentMethod ='Internal'
+        transection.product = product
+        transection.transection_type = TransectionType.BOOST
+        transection.paymentId = `TSN-${product.id}-${Math.floor(Math.random() * 1000000)}`
+        transection.product_id = product.id
+        
+        await queryRunner.manager.save(Wallets, wallets)
+       await queryRunner.manager.save(Transections, transection)
+      
+  }
       const savedProduct = await queryRunner.manager.save(Product, product);
 
       // Handle images if any
       if (createProductDto.images && Array.isArray(createProductDto.images)) {
-
+ 
          await this.queue.add("Product-image",createProductDto.images,{
           attempts:10,
          })
@@ -135,8 +153,6 @@ const boostDays = 3
         // Save product images inside the transaction
         await queryRunner.manager.save(ProductImage, productImages);
       }
-
-
       // Commit the transaction after saving both product and images
       await queryRunner.commitTransaction();
  // Create notification (can also be part of the transaction)
@@ -236,9 +252,11 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
     page = '1',
     limit = '10',
     userId,
+    user,
     type
   } = query;
 
+  // console.log(term)
   const where: any = {};
 
   // Text Search
@@ -266,10 +284,40 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
 
   where.status = ProductStatus.AVAILABLE;
 
+if(!term || !category ){
+
+  const behaviorData = await this.userBehaviourService.latestBehaviour(userId);
+  if(behaviorData && behaviorData.search){ 
+    where.product_name = ILike(`%${behaviorData.search}%`)
+  }
+  if(behaviorData && behaviorData.category){ 
+    where.product_name = ILike(`%${behaviorData.category}%`)
+  }
+  
+      // // Adjust filters based on user behavior
+      // if (behaviorData.searchTerms.length > 0) {
+      //   where.product_name = ILike(`%${behaviorData.searchTerms.join(' ')}%`);  // Combine search terms
+
+      // }
+}
+    // if (behaviorData.categories.length > 0) {
+    //   where.category = In(behaviorData.categories);  // Match any of the aggregated categories
+    // }
+
+    // if (behaviorData.brand.length > 0) {
+    //   where.size = In(behaviorData.brand);  // Match any of the aggregated sizes
+    // }
+
+    // if (behaviorData.priceRanges.length > 0) {
+    //   const [minPrice, maxPrice] = behaviorData.priceRanges[0].split('-').map(Number);  // Just use the first available range
+    //   where.selling_price = Between(minPrice || 0, maxPrice || Number.MAX_SAFE_INTEGER);
+    // }
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
+  if(term || category || price ){
+    await this.queue.add('user-behaviour',{ user,search:term,category,price,size},{attempts:10})
 
-// console.log(userId)
+  }
   const [data, total] = await this.productRepository.findAndCount({
     where,
     skip,
@@ -277,7 +325,9 @@ query.andWhere('product.user_id = :user_id',{user_id:filters.userId})
     order: {is_boosted:"DESC",boost_end_time: "ASC",created_at: 'DESC' },
     // relations: ['images'],  // Ensure images are loaded
   });
- 
+
+
+  
 const productIds = data.map(product => product.id);
   const productImages = await this.productImageRepository.find({
     where: { product_id: In(productIds) },
@@ -292,13 +342,82 @@ const productIds = data.map(product => product.id);
   // Shuffle only the boosted products
   const shuffledBoostedProducts = this.shuffleArray(boostedProducts);
   const finalData = [...shuffledBoostedProducts, ...nonBoostedProducts];
-  // console.log(finalData)
   return {
     message: "Products retrieved successfully",
     statusCode: 200,
     data:finalData,
     pagination: pagination({ page: parseInt(page), limit: parseInt(limit), total }),
   };
+}
+async boostProduct({ productId, user }: { productId: number; user: User }) {
+  const product = await this.getProduct(productId); // Assume this fetches the product
+  const wallets = await this.walletsRepo.findOne({ where: { user_id: user.id } });
+
+  if (!wallets) {
+    throw new BadRequestException("Wallet not found for this user");
+  }
+
+  if (product.is_boosted) {
+    throw new BadRequestException("Product already boosted!");
+  }
+
+  const productBoostingCost = 1;
+  const boostDays = 3;
+  const daysInSecond = 24 * 60 * 60 * 1000;
+
+  if (wallets.balance < productBoostingCost) {
+    throw new BadRequestException("You don't have enough balance to boost the product!");
+  }
+
+  if (product.user.id !== user.id) {
+    throw new ForbiddenException("This is not your product");
+  }
+
+  // Start a new transaction
+  const queryRunner = this.dataSource.createQueryRunner();
+  await queryRunner.startTransaction();
+
+  try {
+    // Update wallet balance
+    wallets.balance -= productBoostingCost;
+    wallets.version += 1;
+
+    // Update product details
+    product.is_boosted = true;
+    product.boost_start_time = new Date();
+    product.boost_end_time = new Date(Date.now() + boostDays * daysInSecond);
+
+    // Create a new transaction record
+    const transection = new Transections();
+    transection.amount = productBoostingCost;
+    transection.paymentMethod = 'Internal';
+    transection.product = product;
+    transection.user = product.user;
+    transection.wallet = wallets;
+    transection.wallet_id = wallets.id;
+    transection.status = PaymentStatus.COMPLETED;
+    transection.transection_type = TransectionType.BOOST;
+    transection.paymentId = `TSN-${productId}-${Math.floor(Math.random() * 1000000)}`;
+    transection.product_id = product.id;
+
+    // Save the transaction, wallet, and product within the transaction context
+    await queryRunner.manager.save(Transections, transection);
+    await queryRunner.manager.save(Wallets, wallets);
+    const savedProduct = await queryRunner.manager.save(Product, product);
+
+    // Commit the transaction after all operations
+    await queryRunner.commitTransaction();
+
+    return { message: "Product boosted successfully", data: savedProduct, status: 'success', statusCode: 200 };
+  } catch (error) {
+    // Rollback the transaction if any error occurs
+    await queryRunner.rollbackTransaction();
+    console.error('Error during boosting product transaction:', error);
+    throw new InternalServerErrorException('An error occurred while boosting the product.');
+  } finally {
+    // Always release the queryRunner, whether the transaction was successful or not
+    await queryRunner.release();
+  }
 }
 
 @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Runs every minute for demonstration ; adjust as needed .
@@ -329,7 +448,6 @@ console.log("Cron Job : ",expiredBoostedProducts)
     }
 
     try {
-      console.log(updateDto.images.length > 0)
     
            Object.assign(product, {
         ...updateDto,
@@ -450,7 +568,6 @@ async checkProductIsAvailable(product:Product){
     };
   }
   
-
    async getProductById(id: number): Promise<ResponseInterface<Product>> {
     const product = await this.getProduct(id)
     if (!product) {

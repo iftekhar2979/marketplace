@@ -7,6 +7,7 @@ import {
   IsNumberString,
   Matches,
 } from 'class-validator';
+import { User } from 'src/user/entities/user.entity';
 
 export class GetProductsQueryDto {
   @ApiPropertyOptional({ description: 'Search term (e.g., product name, brand)', example: 'iphone' })
@@ -30,6 +31,9 @@ export class GetProductsQueryDto {
   @IsOptional()
   @IsString()
   userId ?: string;
+  @ApiPropertyOptional({ description: 'User UUid', example: 'UUID' })
+  
+  user ?: User;
 
   @ApiPropertyOptional({ description: 'Price range in format min-max', example: '100-300' })
   @IsOptional()

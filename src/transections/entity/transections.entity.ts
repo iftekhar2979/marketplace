@@ -50,13 +50,13 @@ export class Transections {
         order: Order;
        @OneToOne(() => Product, { onDelete: 'CASCADE' ,nullable:true })
        @JoinColumn({ name: 'product_id' })
-        product: Product;
-         @ApiProperty({ description: 'Timestamp when the offer was created' })
-          @CreateDateColumn({ type: 'timestamp with time zone' })
-          created_at: Date;    
-          @ApiProperty({ description: 'Timestamp when the offer was last updated' })
-          @UpdateDateColumn({ type: 'timestamp with time zone' })
-          updated_at: Date;
+     product: Product;
+      @ApiProperty({ description: 'Timestamp when the offer was created' })
+       @CreateDateColumn({ type: 'timestamp with time zone' })
+      created_at: Date;    
+      @ApiProperty({ description: 'Timestamp when the offer was last updated' })
+      @UpdateDateColumn({ type: 'timestamp with time zone' })
+      updated_at: Date;
 
         
 } 

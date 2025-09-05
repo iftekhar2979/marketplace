@@ -44,15 +44,15 @@ constructor(private readonly productsService: ProductsService) {}
     return this.productsService.create(createProductDto, user);
   }
 
-@Post()
-@UseGuards(JwtAuthenticationGuard)
-  @ApiResponse({ status: 201, description: 'Product retrived successfully', type: Product })
-  @ApiBody({ type: CreateProductDto })
-  async getProducts(
+// @Post()
+// @UseGuards(JwtAuthenticationGuard)
+//   @ApiResponse({ status: 201, description: 'Product retrived successfully', type: Product })
+//   @ApiBody({ type: CreateProductDto })
+//   async getProducts(
 
-  ) {
-    return this.productsService.findAll()
-  }
+//   ) {
+//     return this.productsService.findAll()
+//   }
 @Get()
 @UseGuards(JwtAuthenticationGuard)
   @ApiResponse({ status: 200, description: 'Product retrived successfully', type: Product })
@@ -65,6 +65,7 @@ constructor(private readonly productsService: ProductsService) {}
       throw new ForbiddenException("Can't resolve the api")
     }
     query.userId = user.id
+    query.user = user
     // console.log(query)
     return this.productsService.findAllWithFilters(query);
   }
@@ -90,6 +91,18 @@ constructor(private readonly productsService: ProductsService) {}
     updateProductDto.images = filesDestination;
     return this.productsService.updateProduct(id, updateProductDto,user.id);
   }
+ @Put(':id/boosts')
+ @UseGuards(JwtAuthenticationGuard)
+ @UsePipes(new ValidationPipe({ transform: true }))
+@ApiResponse({ status: 200, description: 'Product boosted successfully', type: Product })
+@ApiParam({ name: 'id', type: Number, description: 'ID of the product to update' })
+  async boostProduct(
+    @Param('id', ParseIntPipe) id: number,
+        @GetUser() user:User,
+  ) {
+    return this.productsService.boostProduct({productId:id,user});
+  }
+
 
   @Patch('/status/:id')
    @UseGuards(JwtAuthenticationGuard,RolesGuard)

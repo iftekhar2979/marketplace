@@ -33,7 +33,7 @@ export class StripeController {
   // }
 
   // Webhook handler for Stripe events
-  @Post('webhook')
+  @Post('checkout')
   async handleStripeWebhook(
     @Body() rawBody: Buffer,
     @Headers('stripe-signature') signature: string,
@@ -54,7 +54,7 @@ export class StripeController {
       switch (event.type) {
         case 'checkout.session.completed':
           const session = event.data.object as any;
-console.log(session)
+console.log(session) 
           const { user, amount, email, name } = session.metadata;
 
           // console.log(session.metadata)

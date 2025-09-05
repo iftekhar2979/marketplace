@@ -2,19 +2,21 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Exclude } from "class-transformer";
 import {
   Column,
-  CreateDateColumn,
+  CreateDateColumn, 
   DeleteDateColumn,
   Entity,
   JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn, 
 } from "typeorm";
 import { UserRoles } from "../enums/role.enum";
 import { Product } from "src/products/entities/products.entity";
 import { Favorite } from "src/favourites/entities/favourite.entity";
 import { ProductBoosts } from "src/product-boost/entities/product-boost.entity";
+import { UserBehaviour } from "src/bull/processors/BehaviourQueue";
+import { UserBehaviours } from "src/user-behaviour/entities/userBehaviour.entity";
 // import { Verification } from "./verification.entity";
 
 
@@ -122,6 +124,8 @@ export class User {
 
   @OneToMany(() => Favorite, (favorite) => favorite.user)
   favorites: Favorite[]; 
+  @OneToMany(() => UserBehaviours, (behaviour) => behaviour.user)
+  behaviours: UserBehaviours[]; 
 
   @OneToMany(() => ProductBoosts, (boost) => boost.user)
   boosts: ProductBoosts[];
