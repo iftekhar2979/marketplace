@@ -4,4 +4,5 @@ export enum ProductStatus {
     PENDING = 'pending',
     DELETED = 'deleted',
     REJECTED = 'rejected',
+    IN_PROGRESS = 'in_progress',
 }

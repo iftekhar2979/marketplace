@@ -38,8 +38,8 @@ export class UserService {
     const user = await this.userRepository.findOne(
       { where: { id } ,
       // relations:['verfications'],
-      select: ["id", "firstName", "lastName", "email", "roles"] });
-   console.log(user)
+      select: ["id", "firstName", "lastName", "email", "roles",'phone'] });
+  //  console.log(user)
     return user;
   }
   async getUser(id:string){

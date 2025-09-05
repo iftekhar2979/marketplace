@@ -17,6 +17,7 @@ import { Offer } from 'src/offers/entities/offer.entity';
 import { User } from 'src/user/entities/user.entity';
 import { OrderStatus, PaymentStatus } from '../enums/orderStatus';
 import { Delivery } from 'src/delivery/entities/delivery.entity';
+import { IsInt, Min } from 'class-validator';
 
 @Entity('orders')
 export class Order {
@@ -52,9 +53,14 @@ product: Product;
   accepted_offer: Offer;
 
   @ApiProperty({ example: 123, description: 'Accepted Offer ID' })
-  @Column()
+  @Column('int',{nullable:true})
   offer_id: number;
 
+  @ApiProperty({ example: 5, description: 'Quantity of the product in stock' })
+  @IsInt()
+  @Min(0)
+  @Column('decimal',)
+  protectionFee: number;
   // 🚚 Delivery
   @OneToOne(() => Delivery, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'delivery_id' })

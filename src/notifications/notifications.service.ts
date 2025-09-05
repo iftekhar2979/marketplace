@@ -52,7 +52,7 @@ export class NotificationsService {
     action: NotificationAction;
     type?: NotificationType;
     msg: string;
-    targetId: number;
+    targetId ?: number;
     notificationFor?: UserRoles;
     isImportant?: boolean;
   }[]): Promise<Notifications[]> {

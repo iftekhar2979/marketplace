@@ -13,11 +13,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersModule } from 'src/orders/orders.module';
 import { DeliveryAddress } from './entities/delivery_information.entity';
 import { CollectionAddress } from './entities/collection_Address.entity';
+import { Product } from 'src/products/entities/products.entity';
+import { Wallets } from 'src/wallets/entity/wallets.entity';
+import { Transections } from 'src/transections/entity/transections.entity';
+import { NotificationsModule } from 'src/notifications/notifications.module';
+import { Notifications } from 'src/notifications/entities/notifications.entity';
+import { AuthModule } from 'src/auth/auth.module';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([Shipment,Delivery,ShipmentDocument,Label,OrderInvoice,DeliveryAddress,CollectionAddress]),
-    OrdersModule
+    TypeOrmModule.forFeature([Shipment,Delivery,ShipmentDocument,Label,OrderInvoice,DeliveryAddress,CollectionAddress,Product,Wallets,Transections,Order,Notifications]),
+    OrdersModule,
+    NotificationsModule,
+    AuthModule,
+    UserModule
   ],
   controllers: [DeliveryController],
   providers: [DeliveryService,ShipmentService]
