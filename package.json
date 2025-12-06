@@ -8,9 +8,9 @@
   "type": "commonjs",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "nest build",
+    "build": "node init && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node init && nest start",
     "start:dev": "cross-env STAGE=dev nest start --watch",
     "start:staging": "cross-env STAGE=staging nest start --watch",
     "start:uat": "STAGE=uat nest start --watch",
